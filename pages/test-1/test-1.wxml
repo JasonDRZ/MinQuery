@@ -1,0 +1,12 @@
+<!--logs.wxml-->
+<view class="container log-list">
+  <block wx:for="{{logs}}" wx:for-item="log" wx:key="*this">
+    <text class="log-item" data-class="$classSelector" bindtap="$bind">{{index + 1}}. {{log}}</text>
+  </block>
+  <view class="log-item" data-m-class="cone" bindtap="$bind">测试事件1</view>
+  <view class="log-item" bindtap="custom">测试事件2</view>
+  <view class="log-item {{$cs.ctwo.$class}}" style="{{$cs.ctwo.$cssAnimation}}" id="secondID1" data-m-class="ctwo" bindtap="$bind" bindtouchstart="$bind"><view>测试事件3</view>{{$data.name}}</view>
+  <view class="log-item" id="idone" data-m-event="page,customFunc" bindtap="$bind">测试事件4</view>
+  <view class="log-item" id="idtwo" data-m-class="cthree" bindtap="$bind">测试事件5</view>
+  <view style="width: 50px;height: 50px;background-color: red;" animation="{{$cs.ctwo.$animation}}"></view>
+</view>

@@ -1,0 +1,28 @@
+<!--index.wxml-->
+<view class="header_container">
+  <view class="current_location active">
+    <text class="header_text">环球中心环球中心</text></view>
+  <view class="search_box header_text">
+    <input bindtap="" placeholder="搜索" />
+  </view>
+</view>
+<view class="banner_container">
+  <swiper indicator-dots="{{banner.indicatorDots}}"
+    autoplay="{{banner.autoplay}}" interval="{{banner.interval}}" duration="{{banner.duration}}" >
+    <block wx:for="{{banner.imgUrls}}">
+      <swiper-item width="355" height="150" class="banner_item" style="background-image: url({{item}});">
+      </swiper-item>
+    </block>
+  </swiper>
+</view>
+<view class="classify_swiper">
+  <swiper indicator-dots="{{classify.indicatorDots}}"
+    autoplay="{{classify.autoplay}}" interval="{{classify.interval}}" duration="{{classify.duration}}" >
+    <block wx:for="{{classify.classGroups}}">
+      <swiper-item width="355" height="150">
+        
+      </swiper-item>
+    </block>
+  </swiper>
+</view>
+

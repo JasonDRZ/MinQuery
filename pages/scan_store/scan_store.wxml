@@ -1,0 +1,67 @@
+<view class="tab_switch_box history_view_store">
+  <view class="tab_header" data-min-scope="tab_header_box" catchtap="$CatchEvent">
+    <view id="switcherHeader_2" class="header_list {{$Class.tab_header.history}}" bindtap="$Event" data-min-scope="tab_header,history" style="{{$Style.tab_header.history}}">去过的店铺</view>
+    <view id="switcherHeader_1" class="header_list {{$Class.tab_header.comment}} " hover-class="{{$HoverClass.swicherScope}}" data-switcher-header="comment" data-min-scope="tab_header,comment" data-min-key="key" style="{{$Style.swicherScope}}" animation="{{$Animation.swicherScope}}"
+    bindtap="$Event" bindlongtap="$Event" style="{{$Style.tab_header.comment}}">评价{{$Scope.swicherScope}}</view>
+  </view>
+  <view class="tab_body">
+    <view class="body_wrapper {{$Class.tab_header.history}}">
+      您去过的店铺{{$Data.switcherHeader_2.monkey.a}}{{$Window.width}}
+    </view>
+    <text>{{storageTest}}</text>
+    <view class="body_wrapper {{$Class.tab_header.comment}}">
+      您评论过的店铺{{newData}}
+
+      <!--<view wx:for="{{[1, 2, 3, 4, 5, 6, 7, 8, 9]}}" wx:for-item="i">
+            <view wx:for="{{[2, 3, 4, 5, 6, 7, 8, 9, 10]}}" wx:for-item="j" >
+                <view wx:if="{{i <= j}}">
+                <text id="list_{{index}}" class="{{$Class.o_list[i*j]}}" style="{{$Style.o_list[i*j]}}" data-min-scope="o_list,{{i*j}}" bindtap="$Event">{{i}} * {{j}} = {{i * j}}</text>
+                </view>
+            </view>
+           </view>-->
+      <view wx:for="{{monkeys}}">
+        <text id="monkey_{{item.id}}" class="{{$Class.monkey[index]}}" style="{{$Style.monkey[index]}}" data-min-scope="monkey,{{index}}" bindtap="$Event">我是一只名叫{{item.propertys.name}}的{{item.propertys.gender}}猴子！</text>
+      </view>
+      <form id="myfirstForm" bindsubmit="formSubmit" bindreset="formReset">
+        <view class="section section_gap">
+          <view class="section__title">switch</view>
+          <switch name="switch" />
+        </view>
+        <view class="section section_gap">
+          <view class="section__title">slider</view>
+          <slider name="slider" show-value></slider>
+        </view>
+        <view class="section">
+          <view class="section__title">input</view>
+          <input name="input" placeholder="please input here" />
+        </view>
+        <view class="section section_gap">
+          <view class="section__title">radio</view>
+          <radio-group name="radio-group">
+            <label>
+              <radio value="radio1" />radio1</label>
+            <label>
+              <radio value="radio2" />radio2</label>
+          </radio-group>
+        </view>
+        <view class="section section_gap">
+          <view class="section__title">checkbox</view>
+          <checkbox-group name="checkbox">
+            <label>
+              <checkbox value="checkbox1" />checkbox1</label>
+            <label>
+              <checkbox value="checkbox2" />checkbox2</label>
+          </checkbox-group>
+        </view>
+        <view class="btn-area">
+          <button id="submit-btn" formType="submit">Submit</button>
+          <button formType="reset">Reset</button>
+        </view>
+      </form>
+    </view>
+  </view>
+</view>
+<view class="store_scanner" bindtap="gotolog">
+  <image src="../../images/Camera.png"></image>
+  扫码
+</view>

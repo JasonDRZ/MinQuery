@@ -1,0 +1,18 @@
+<!--logs.wxml-->
+<view class="container log-list">
+  <block wx:for="{{logs}}" wx:for-item="log" wx:key="*this">
+    <text class="log-item" data-class="$classSelector" bindtap="$bind">{{index + 1}}. {{log}}</text>
+  </block>
+  <view class="log-item" data-m-class="firstClassSelector" bindtap="$bind">测试事件1</view>
+  <view class="log-item" bindtap="custom">测试事件2</view>
+  <view class="log-item {{$cs.secondClassSelector.$class}}" style="{{$cs.secondClassSelector.$style}}{{$cs.secondClassSelector.$cssAnimation}}" id="secondID1" data-m-class="secondClassSelector" bindtap="$bind" bindtouchstart="$bind"><view>测试事件3</view>{{userName}}</view>
+  <view class="log-item" id="secondID2" data-m-event="page,customFunc" bindtap="$bind">测试事件4</view>
+  <view class="log-item" id="secondID3" data-m-class="cs001" bindtap="$bind">测试事件5</view>
+  <view style="width: 50px;height: 50px;background-color: red;" animation="{{$coustomOne.$animation}}"></view>
+  <canvas canvas-id="myCanvas" style="border: 1px solid;"/>
+  <checkbox-group bindchange="$event">
+  <label class="checkbox" wx:for="{{items}}">
+    <checkbox value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
+  </label>
+</checkbox-group>
+</view>

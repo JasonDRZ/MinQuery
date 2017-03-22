@@ -1,0 +1,28 @@
+@import "../../app.wxss";
+@import "../../plugins/switcher/switcher.wxss";
+.store_scanner{
+  z-index: 9999;
+	position: fixed;
+	bottom: 30px;
+	left: 50%;
+	transform: translateX(-50%);
+	height: 30px;
+	width: 90px;
+	padding: 5px 10px;
+	line-height: 20px;
+	background-color: #fff;
+	border-radius: 20px;
+	box-shadow: 0 0 15px #000;  
+}
+.store_scanner image {
+	float: left;
+	height: 20px;
+  width: 20px;
+	margin: 0 10px 0 5px;
+}
+
+.borderText{
+	display: block;
+	padding: 5px;
+	border: 1px solid #000;
+}

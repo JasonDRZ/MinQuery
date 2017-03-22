@@ -1,0 +1,64 @@
+/* 基础样式 */
+view, scroll-view, swiper, swiper-item, icon, text, progress, button,
+checkbox-group, checkbox, form, input, label, picker, radio-group, radio, slider,
+switch, action-sheet, action-sheet-item, action-sheet-cancel, modal, toast,
+loading, navigator, audio, image, video, map, canvas {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+page {
+  height: 100%;
+  font-family: -apple-system-font, Helvetica Neue, Helvetica, sans-serif;
+  background-color: #efefef;
+}
+
+checkbox-group, radio-group {
+  display: block;
+}
+
+:before, :after, ::before, ::after {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+/*公共样式*/
+.com_minheight {
+  min-height: 60px;
+}
+
+.com_full {
+  width: 100%;
+  height: 100%;
+}
+
+.com_block {
+  display: block;
+}
+
+.com_autosize {
+  width: auto;
+  height: auto;
+}
+
+.com_fullwidth {
+  width: 100%;
+}
+
+.com_fullheight {
+  height: 100%;
+}
+
+.com_initHide {
+  opacity: 0 !important;
+}
+
+.com_ellipse {
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
