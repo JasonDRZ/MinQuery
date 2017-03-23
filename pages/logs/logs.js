@@ -27,7 +27,7 @@ $((_$) => {
   var _page = $("page");
   var $coustom = $("$coustomOne");
   var canvas = $("#myCanvas");
-
+  var _window = $("window").get(0);
 
   canvas.canvas(function(){
     this.setFillStyle('red')
@@ -48,11 +48,14 @@ $((_$) => {
 
   
   var secondSelector = $(".secondClassSelector");
-  secondSelector.attr("name", "JasonDRZ");
+  secondSelector.config("name", "JasonDRZ");
+  secondSelector.config("gander", "男");
+  secondSelector.config("height", "168cm");
   secondSelector.one("tap", function (e) {
     console.info(e.data('mClass'));
     userName.set( "JasonDRZ&CSQ" );
-    console.log($("window").get(0));
+    console.log($(this).config().name("JSONAFDFS"));
+    console.log($(this).config().name());
     $(this).toggleClass("active", "disable").delay(2000).cssAnimation("box-shadow: 0 0 10px #000;transform: scale(1.1);", 300).delay(3000).cssAnimation("border: 1px solid #444;background: #1f2a3d;", 800, ".17, .86, .73, .14").delay(4800).cssAnimation({
       "margin-top": "20px",
       "margin-bottom": "40px"

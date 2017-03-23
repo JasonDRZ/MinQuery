@@ -1,12 +1,11 @@
 /*!
- * MinQuery MinApp Development JavaScript Library v2.1.2
- * http://jquery.com/
+ * MinQuery for Wechat Min-App Development JavaScript Library v1.0.2
+ * https://github.com/JasonDRZ/MinQuery
  *
- * Copyright 2016, 2017 Jason.DRZ.
+ * Copyright 2016, 2017 JasonDRZ.
  * Released under the MIT license
- * http://jquery.org/license
  *
- * Date: 2017-3-15 16.21
+ * Date: 2017-4-15 16.21
  */
 
 // 框架配置项
@@ -817,7 +816,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                     }
                 } else {
                     for (i in obj) {
-                        value = callback.apply(obj[i++], args);
+                        value = callback.apply(obj[i], args);
 
                         if (value === false) {
                             break;
@@ -837,7 +836,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                     }
                 } else {
                     for (i in obj) {
-                        value = callback.call(obj[i], i, obj[i++]);
+                        value = callback.call(obj[i], i, obj[i]);
 
                         if (value === false) {
                             break;
@@ -1117,7 +1116,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
         // hideToast
         hideToast(delay) {
-            MinQuery.timeOut(wx.hideToast, delay ? delay : 0,true);
+            MinQuery.timeOut(wx.hideToast, delay ? delay : 0, true);
         },
         // showActionSheet
         actionSheet(items, color, call) {
@@ -1267,7 +1266,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
             return registerWxHandler("startRecord");
         },
         stopRecord(delay) {
-            MinQuery.timeOut(wx.stopRecord, delay ? delay : 0,true);
+            MinQuery.timeOut(wx.stopRecord, delay ? delay : 0, true);
         },
         // 录音播放
         playVoice(filePath, call) {
@@ -1280,10 +1279,10 @@ var rootMinQuery = function (pageName, recoveryMode) {
             return registerWxHandler("playVoice");
         },
         pauseVoice(delay) {
-            MinQuery.timeOut(wx.pauseVoice, delay ? delay : 0,true);
+            MinQuery.timeOut(wx.pauseVoice, delay ? delay : 0, true);
         },
         stopVoice(delay) {
-            MinQuery.timeOut(wx.stopVoice, delay ? delay : 0,true);
+            MinQuery.timeOut(wx.stopVoice, delay ? delay : 0, true);
         }
     });
 
@@ -1752,7 +1751,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                     ? e.target.dataset.mClass
                     : e.currentTarget.dataset.mClass;
         // event对象扩展
-        if (e.type === "submit") MinQuery.extend(e,{
+        if (e.type === "submit") MinQuery.extend(e, {
             // 设置访问formData快捷接口
             form(key) {
                 if (key) {
@@ -1760,7 +1759,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 } else return MinQuery.getData(this.detail, `value`);
             }
         })
-        MinQuery.extend(e,{
+        MinQuery.extend(e, {
             // 访问当前元素
             current(key) {
                 if (key) {
@@ -1793,12 +1792,12 @@ var rootMinQuery = function (pageName, recoveryMode) {
         var _elarr = Array.from(selector);
         _elarr.shift();
         var elem = _elarr.join("");
-        var eleType = "", eleName = "", f_elem, r_route = "";
+        var eleType = "", eleName = "", f_elem, r_path = "";
         if (selector.length > 1 && prevfix in MinQuery.selectorsBank) {
             // 查询类型
             eleType = MinQuery.selectorsBank[prevfix][0];
-            r_route = `${eleType}.${elem}`;
-            f_elem = MinQuery.getData(r_route);
+            r_path = `${eleType}.${elem}`;
+            f_elem = MinQuery.getData(r_path);
             eleName = elem;
         } else if (selector.length === 1 && MinQuery.selectorsBank[prevfix][0] === '$all') {
             // 查询全部
@@ -1809,12 +1808,12 @@ var rootMinQuery = function (pageName, recoveryMode) {
             return eles;
         } else {
             f_elem = MinQuery.getData(selector);
-            r_route = eleName = selector;
+            r_path = eleName = selector;
         }
         if (f_elem) {
             return f_elem;
         } else {
-            MinQuery.registeredElements.push(r_route);
+            MinQuery.registeredElements.push(r_path);
             // 获取元素初始化对象
             var newEleAttr = $mq_config.getElementInitialData();
             // 元素所属类型
@@ -1822,9 +1821,9 @@ var rootMinQuery = function (pageName, recoveryMode) {
             // 去前缀元素名称
             newEleAttr.$selectorName = eleName;
             // 初始化元素对象
-            setCurrentPageData(r_route, newEleAttr);
+            setCurrentPageData(r_path, newEleAttr);
             // 查询元素对象
-            return MinQuery.getData(r_route);
+            return MinQuery.getData(r_path);
         }
     };
     // page initial object
@@ -1950,7 +1949,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
     var elem_priv = {
         priv_keys: "$__priv_keys__",
         get(ele, _type) {
-            return MinQuery.getData(ele,`${this.priv_keys}.${_type}`);
+            return MinQuery.getData(ele, `${this.priv_keys}.${_type}`);
         },
         set(ele, _type, value, arrPush) {
             if (ele) {
@@ -1963,59 +1962,118 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 }
             }
         },
+        access(ele, _type, key, value) {
+            if (ele) {
+                var curPriv = !ele[this.priv_keys] ? (ele[this.priv_keys] = {}) : ele[this.priv_keys];
+                var curType = !curPriv[_type]
+                if (curType) {
+                    if (MinQuery.isPlainObject(curType) && !!key) {
+                        !!value ? (curType[key] = value) : curType = key;
+                    } else if (MinQuery.isArray(curType)) {
+                        !!key && !value ? curType.push(key) : !!key && !!value ? curType.push({
+                            [key]: value
+                        }) : null;
+                    }
+                    return curType;
+                }
+            }
+        },
         clear(ele, _type) {
             if (ele) {
-                MinQuery.dataProcessor(ele,`${this.priv_keys}.${_type}`,null);
-                // ele[this.priv_keys] && ele[this.priv_keys][_type] && (delete ele[this.priv_keys][_type]);
+                MinQuery.dataProcessor(ele, `${this.priv_keys}.${_type}`, null);
             }
         }
     }
     MinQuery.extend({
-        timeOut(call,delay,still){
-            return setTimeout(function(){
-                if(!!this.still || !this.still && MinQuery.isReady){
+        timeOut(call, delay, still) {
+            return setTimeout(function () {
+                if (!!this.still || !this.still && MinQuery.isReady) {
                     MinQuery.isFunction(this.call) && this.call();
                 }
             }.bind({
                 call: call,
                 // 标识是否检测ready字段
                 still: still
-            }),delay);
+            }), delay);
+        }
+    });
+    // 公用元素属性访问器
+    MinQuery.fn.extend({
+        eleAttrAccess(_type, handler, key, value) {
+            var i = 0, len = this.length, ele;
+            !MinQuery.isFunction(handler) && (handler = function () { });
+            for (; i < len;) {
+                ele = this[i++];
+                var _path = `${ele.$selectorType}.${ele.$selectorName}.${_type}.${key}`,
+                    _eledt = ele[_type];
+                if (ele.$selectorName === "page") {
+                    _path = `${_type}.${key}`;
+                    _eledt = ele.data[_type];
+                }
+                // 执行自定义处理器
+                var result = handler.call(ele, _path, _eledt, key, value);
+                if (!!result && result.$__force_return__) return result.returns;
+                if (!!result && result.$__force_continue__) continue;
+                if (typeof key === "string") {
+                    if (value) setCurrentPageData(_path, value); else return _eledt ? MinQuery.getData(_eledt, key) : undefined;
+                } else return undefined;
+            }
+            return this;
         }
     })
     // Elements Attributes Operation Methods
     MinQuery.fn.extend({
         // 设置当前元素data值
-        data(key, value, attr) {
-            var _type = attr ? '$attr' : '$data', i = 0, len = this.length, ele;
-            for (; i < len;) {
-                ele = this[i++];
-                var _route = `${ele.$selectorType}.${ele.$selectorName}.${_type}.${key}`,
-                    _eledt = ele[_type];
-                if (ele.$selectorName === "page") {
-                    _route = `${_type}.${key}`;
-                    _eledt = ele.data[_type];
-                }
-                if (typeof key === "string") {
-                    if (value) {
-                        setCurrentPageData(_route, value);
-                    } else {
-                        return _eledt ? MinQuery.getData(_eledt, key) : undefined;
-                    }
-                } else {
-                    return undefined;
-                }
-            }
-            return this;
+        data(key, value) {
+            return this.eleAttrAccess('$data', null, key, value);
         },
         attr(key, value) {
-            return MinQuery(this).data(key, value, true);
+            return this.eleAttrAccess('$attr', null, key, value);
+        },
+        config(key, value) {
+            return this.eleAttrAccess('$cf', function (_path, _eledata, k, v) {
+                var _cf = elem_priv.get(this, "$cf-configuration"), plainKey = false, stringKey = false;
+                if (MinQuery.isString(k) && !!v || (plainKey = MinQuery.isPlainObject(k))) {
+                    if (plainKey) {
+                        $.each(k, (kk, kv) => {
+                            kk = `${_path}`;
+                        })
+                    } else k = `${_path}`;
+                    if (!_cf) {
+                        elem_priv.set(this, "$cf-configuration", MinQuery.setData(k, v, true, true));
+                    } else {
+                        var _hook = MinQuery.setData(k, v, true, true), _hk;
+                        for (_hk in _hook) _cf[_hk] = _hook[_hk];
+                    }
+                    return {
+                        $__force_continue__: true
+                    }
+                } else if (!k || (stringKey = MinQuery.isString(k)) && !v) {
+                    var operate = {};
+                    if (stringKey) operate = _cf[k].get();
+                    else {
+                        delete _cf.__length__;
+                        delete _cf.__paths__;
+                        MinQuery.each(_cf, function (confName, confHook) {
+                            operate[confName] = function (value) {
+                                var _hook = confHook;
+                                if (!!value) _hook.set(value);
+                                else return _hook.get();
+                            };
+                        })
+                    }
+                    return {
+                        $__force_return__: true,
+                        returns: operate
+                    }
+                }
+            }, key, value);
         },
         // animation delay
         delay(time) {
             if (typeof time === 'number') {
                 this.each(function () {
-                    elem_priv.set(this, "$animationDelay", time);
+                    elem_priv.set(this, "$animation-delay", time);
                 })
             } else {
                 console.error("Delay method should be performed before the animation method,and requires a number param!")
@@ -2026,24 +2084,24 @@ var rootMinQuery = function (pageName, recoveryMode) {
         stop(jumpToEnd) {
             this.each(function () {
                 console.log("ANI STOPPed")
-                var _queTime = elem_priv.get(this, "$animationQueueTime");
-                var _queFunc = elem_priv.get(this, "$animationQueueFunc");
+                var _queTime = elem_priv.get(this, "$animation-queue-time");
+                var _queFunc = elem_priv.get(this, "$animation-queue-func");
                 // 销毁所有动画队列
                 if (_queTime instanceof Array) {
                     MinQuery.each(_queTime, (i, e) => {
                         clearTimeout(e);
                         e = null;
                     })
-                    elem_priv.clear(this, "$animationQueue")
+                    elem_priv.clear(this, "$animation-queue")
                 }
                 if (jumpToEnd) {
                     // 设置当前动画结束到最后样式
-                    elem_priv.set(this, "$animationToEnd", jumpToEnd);
+                    elem_priv.set(this, "$animation-to-end", jumpToEnd);
                     if (_queFunc instanceof Array) {
                         MinQuery.each(_queFunc, (i, f) => {
                             MinQuery.isFunction(f) && f();
                         });
-                        elem_priv.clear(this, "$animationToEnd")
+                        elem_priv.clear(this, "$animation-to-end")
                     }
                 }
             });
@@ -2075,12 +2133,12 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 // 动画当前步骤配置
                 animateObj.step(nativeCf);
                 // 获取通过delay预先设置的延时
-                var delayTime = elem_priv.get(this, "$animationDelay") || 0;
+                var delayTime = elem_priv.get(this, "$animation-delay") || 0;
                 // 重置animationDelay
-                elem_priv.set(this, "$animationDelay", 0);
+                elem_priv.set(this, "$animation-delay", 0);
                 // 延时更新动画数据
                 var aniQueueMet = function () {
-                    if (!!elem_priv.get(this.ele, "$animationToEnd")) {
+                    if (!!elem_priv.get(this.ele, "$animation-to-end")) {
                         console.log(this.stepCF)
                         this.stepCF.delay = 0;
                         this.stepCF.duration = 0;
@@ -2094,8 +2152,8 @@ var rootMinQuery = function (pageName, recoveryMode) {
                     ele: this
                 });
                 // 将timeOut对象加入到当前元素的动画队列
-                elem_priv.set(this, "$animationQueueTime", MinQuery.timeOut(aniQueueMet, delayTime), true);
-                elem_priv.set(this, "$animationQueueFunc", aniQueueMet, true);
+                elem_priv.set(this, "$animation-queue-time", MinQuery.timeOut(aniQueueMet, delayTime), true);
+                elem_priv.set(this, "$animation-queue-func", aniQueueMet, true);
             })
             return this;
         },
@@ -2132,12 +2190,12 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 // 样式继承
                 aniStyles = $csscontrol.styleExtend(aniStyles, _transition);
                 // 获取通过delay预先设置的延时
-                var delayTime = elem_priv.get(this, "$animationDelay") || 0;
+                var delayTime = elem_priv.get(this, "$animation-delay") || 0;
                 // 重置animationDelay
-                elem_priv.set(this, "$animationDelay", 0);
+                elem_priv.set(this, "$animation-delay", 0);
                 // 延时更新动画数据
                 var aniQueueMet = function () {
-                    if (!!elem_priv.get(this.ele, "$animationToEnd")) {
+                    if (!!elem_priv.get(this.ele, "$animation-to-end")) {
                         this.aniStyle = $csscontrol.styleExtend(this.aniStyle, `transition: none;`);
                     }
                     MinQuery(this.ele).css(this.aniStyle, undefined, '$cssAnimation');
@@ -2146,8 +2204,8 @@ var rootMinQuery = function (pageName, recoveryMode) {
                     aniStyle: aniStyles
                 });
                 // 将timeOut对象加入到当前元素的动画队列
-                elem_priv.set(this, "$animationQueueTime", MinQuery.timeOut(aniQueueMet, delayTime), true);
-                elem_priv.set(this, "$animationQueueFunc", aniQueueMet, true);
+                elem_priv.set(this, "$animation-queue-time", MinQuery.timeOut(aniQueueMet, delayTime), true);
+                elem_priv.set(this, "$animation-queue-func", aniQueueMet, true);
             })
             return this;
         },
@@ -2276,10 +2334,58 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 return this;
             else return cobj;
         }
-    })
+    });
+   
 
     // 设置数据[keyString'设置查询的字符串'，keyValue'设置值']
-    var setCurrentPageData = function (keyString, keyValue) {
+    var setCurrentPageData = function (keyString, keyValue, stayFormat, detecteInerit) {
+        // 将数据格式统一规划为对象方式
+        var i = 0, returns = {
+            __length__: 0,
+            __paths__: []
+        };
+        if (MinQuery.isString(keyString) && !!keyValue) {
+            keyString = {
+                [keyString]: keyValue
+            }
+        }
+        if (!MinQuery.isPlainObject(keyString))
+            return;
+        // 限制开发者直接修改框架固有管理对象属性，导致管理出现混乱
+        for (var k in keyString) {
+            // 执行$watch
+            detecteWatchTarget(k, keyString[k]);
+
+            if (MinQuery.trim(k) == "")
+                return;
+            var ka = k.split(".");
+            i++;
+            if (detecteInerit === true) {
+                for (var ik in MinQuery.inherentStaticKeys) {
+                    if (ka.indexOf(ik) !== -1) {
+                        console.error(`You can not directly to tamper with MinQuery inherent data attribute ${ik}。 Please check MinQuery attribute "inherentStaticKeys" to avoid more conflict!`);
+                        return undefined;
+                    }
+                }
+            }
+            // 获取操作key的最后一位，作为当前返回操作的标识
+            var fk = ka[ka.length - 1];
+            returns[fk] = {
+                // 操作hook的目标查询路径
+                __path__: k,
+                // 获取
+                get(key) {
+                    return MinQuery.getData(this.__path__ + (!!key ? `.${key}` : ""));
+                },
+                // 修改当前对象中对应的键值
+                set(key, value) {
+                    if (!value) { value = key; key = null }
+                    setCurrentPageData(this.__path__ + (!!key ? `.${key}` : ""), value);
+                }
+            }
+            returns.__length__ = i;
+            returns.__paths__.push(fk);
+        }
         // 如果存在page对象则将数据绑定到page对象上
         // 小程序原型方法
         if (keyString instanceof Object) {
@@ -2292,15 +2398,11 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 });
         }
         // 同步更新框架上的数据
-        // 执行$watch
-        if (MinQuery.isPlainObject(keyString)) {
-            for (var k in keyString) {
-                detecteWatchTarget(k, keyValue);
-            }
-        } else detecteWatchTarget(keyString, keyValue);
-
-
-        MinQuery.dataProcessor($pageInitObject.data, keyString, keyValue)
+        MinQuery.dataProcessor($pageInitObject.data, keyString, keyValue);
+        // 如果
+        stayFormat !== true && returns.__length__ === 1 && (returns = returns[returns.__paths__[0]]);
+        // 返回一个后期操作hook，
+        return returns;
     }
     // 数据操作方法主体
     MinQuery.extend({
@@ -2316,51 +2418,9 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
         // 设置键值数据，保证Page数据与框架数据的同步性
         // 此接口主要供给插件访问接口
-        setData(keyString, keyValue, watchCall) {
-            // 将数据格式统一规划为对象方式
-            var i = 0, returns = {
-                __length__: 0,
-                __routes__: []
-            };
-            if (MinQuery.isString(keyString) && !!keyValue) {
-                keyString = {
-                    [keyString]: keyValue
-                }
-            }
-            if (!MinQuery.isPlainObject(keyString))
-                return;
-            // 限制开发者直接修改框架固有管理对象属性，导致管理出现混乱
-            for (var k in keyString) {
-                if (MinQuery.trim(k) == "")
-                    return;
-                var ka = k.split(".");
-                i++;
-                for (var ik in MinQuery.inherentStaticKeys) {
-                    if (ka.indexOf(ik) !== -1) {
-                        console.error(`You can not directly to tamper with MinQuery inherent data attribute ${ik}。 Please check MinQuery attribute "inherentStaticKeys" to avoid more conflict!`);
-                        return undefined;
-                    }
-                }
-                var fk = ka[ka.length - 1];
-                returns[fk] = {
-                    __path__: k,
-                    get(key) {
-                        return MinQuery.getData(this.__path__ + (!!key ? `.${key}` : ""));
-                    },
-                    set(key, value) {
-                        if (!value) { value = key; key = null }
-                        setCurrentPageData(this.__path__ + (!!key ? `.${key}` : ""), value);
-                    }
-                }
-                returns.__length__ = i;
-                returns.__routes__.push(fk);
-            }
-
+        setData(keyString, keyValue, stayFormat, forceAccess) {
             // 修改并使用Page实例对象中的setData原生方法同步数据
-            setCurrentPageData(keyString, keyValue);
-            // 返回一个后期操作hook
-            returns.__length__ === 1 && (returns = returns[returns.__routes__[0]]);
-            return returns;
+            return setCurrentPageData(keyString, keyValue, !!stayFormat ? stayFormat : false, MinQuery.type(forceAccess) === "boolean" ? !forceAccess : true);
         },
         /** 用于检测数据变化，接收一个查询key组成的字符串和一个改变触发匿名处理函数;
          *  @param: fuzzy 参数为可选参数,类型为Boolean。设置为true时则对key字符串进行模糊匹配，而非绝对匹配
