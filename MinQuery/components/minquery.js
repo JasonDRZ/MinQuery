@@ -75,7 +75,7 @@ const $mq_config = {
 }
 // 原型工具方法
 const isEmptyObject = function (obj) {
-    var name;
+    let name;
     for (name in obj) {
         return false;
     }
@@ -83,7 +83,7 @@ const isEmptyObject = function (obj) {
 };
 // 简易原型继承方法，框架外部使用时仅能做对象浅层继承
 const $extend = function () {
-    var options, name, src, copy, copyIsArray, clone,
+    let options, name, src, copy, copyIsArray, clone,
         target = arguments[0] || {},
         i = 1,
         length = arguments.length,
@@ -130,7 +130,7 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
             return sourceData;
         }
         // 是否获取指定键值
-        var dataRequire = false, obj = {};
+        let dataRequire = false, obj = {};
         if (typeof keyString === "string" && typeof keyValue === "undefined") {
             dataRequire = true;
             obj[keyString] = {};
@@ -147,12 +147,12 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
             } else
                 obj[keyString] = keyValue;
         }
-        var undefindData = function (key, _tar) {
+        let undefindData = function (key, _tar) {
             console.error(`The key:[${key}] does not exist in data:`, _tar);
         }
         // dataRequire模式，不存在则返回false，并终止；
         // 非dataRequire模式，将自动初始化对象的值为指定的objInit值
-        var analyType = function (_data, key, objInit) {
+        let analyType = function (_data, key, objInit) {
             if (!_data[key]) {
                 if (dataRequire) {
                     // undefindData(key, _data);
@@ -168,7 +168,7 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
         let dotKeys, arrKeys, eackKey, noArrKey, value, l, d;
         // 对象循环
         dataEach: for (l in obj) {
-            var _rd = sourceData;
+            let _rd = sourceData;
             // 优先筛选dot key
             dotKeys = l.split(".");
             // 存储当前字段数据
@@ -267,7 +267,7 @@ const jsonToStyle = function (styleJson, extraStyle) {
 };
 //样式承接=>旨在更新原有样式，添加新的样式，而非删除原有添加新样式
 const styleExtend = function () {
-    var args = arguments, first = arguments[0], len = arguments.length, i = 1;
+    let args = arguments, first = arguments[0], len = arguments.length, i = 1;
     if (typeof first === "string") {
         first = styleToJson(first);
     }
@@ -300,7 +300,7 @@ const addClass = function (sourceClassStr, className) {
 
 const removeClass = function (sourceClassStr, className) {
     if (typeof sourceClassStr === "string") {
-        var cindex = hasClass(sourceClassStr, className);
+        let cindex = hasClass(sourceClassStr, className);
         sourceClassStr = sourceClassStr.split(" ");
         cindex !== -1 && sourceClassStr.splice(cindex, 1);
         return sourceClassStr.join(" ");
@@ -315,7 +315,7 @@ const $csscontrol = {
     removeClass: removeClass
 };
 const $getSystemInfo = function (targetObj) {
-    var sys, res = {};
+    let sys, res = {};
     try {
         sys = wx.getSystemInfoSync()
         if (sys) {
@@ -379,19 +379,11 @@ const $pageLoadedInstances = {
         }
     }
 }
-// 服务器注册,用于补全各个接口
-const $minServers = {
-    api: "",
-    image: "",
-    video: "",
-    socket: "",
-    audio: ""
-}
 // set window object 
-var $windowInfo = {};
+let $windowInfo = {};
 // bind system info
-var getSystemInfo = function (targetObj) {
-    var sys, res = {};
+let getSystemInfo = function (targetObj) {
+    let sys, res = {};
     try {
         sys = wx.getSystemInfoSync()
         // res.model pixelRatio windowWidth windowHeight language version platform
@@ -459,9 +451,9 @@ const $globalEvents = {
     // filter arr: 触发指定页面的当前事件['page1','page1']，触发除了过滤页面以外所有页面的当前事件["!page1","!page2"]
     trigger(pname, ename, data, filter) {
         if (!pname) return;
-        var _exec = {}, _ignore = {}, _perm;
+        let _exec = {}, _ignore = {}, _perm;
         this.classifyFilter(filter, _ignore, _exec);
-        for (var pg in this.__events__) {
+        for (let pg in this.__events__) {
             if (pg in _ignore) continue;
             if (!isEmptyObject(_exec)) {
                 if (pg in _exec) _perm = true;
@@ -479,9 +471,9 @@ const $globalEvents = {
     },
     // filter arr: 关闭对应页面的当前事件['page1','page1']，关闭除了过滤页面以外所有页面的当前事件["!page1","!page2"]
     distory(ename, filter) {
-        var _off = {}, _keep = {}, _perm = false;
+        let _off = {}, _keep = {}, _perm = false;
         this.classifyFilter(filter, _keep, _off);
-        for (var pg in this.__events__) {
+        for (let pg in this.__events__) {
             if (pg in _keep) continue;
             if (!isEmptyObject(_off)) {
                 if (pg in _off) _perm = true;
@@ -494,10 +486,64 @@ const $globalEvents = {
             }
         }
     }
+};
+
+// 小程序API二次封装调用方法
+// 链式注册异步回调链式处理函数
+let wxAsyncApiHandler = function (context) {
+    let _register = function (mname) {
+        context[mname] = {};
+        return {
+            fail(cb) {
+                context[mname].fail = cb;
+                return this;
+            },
+            error(cb) {
+                return this.fail(cb);
+            },
+            success(cb) {
+                context[mname].success = cb;
+                return this;
+            },
+            complete(cb) {
+                context[mname].complete = cb;
+                return this;
+            },
+            cancel(cb) {
+                context[mname].cancel = cb;
+            }
+        }
+    };
+    let _trigger = function (mname, method, res) {
+        if (context[mname] && context[mname][method]) {
+            let targetMethod = context[mname][method];
+            if (typeof targetMethod == 'function') {
+                _handleResponse(res, targetMethod, context[mname]);
+            }
+        }
+    }
+    let _handleResponse = function (e, call, callBank) {
+        let _err = e.errMsg.split(":");
+        if (_err[1] === "ok" && e.statusCode == 200) {
+            if (callBank instanceof Object) call = callBank['success'];
+            call && call(e.data, {
+                errMsg: e.errMsg,
+                statusCode: e.statusCode
+            });
+        } else {
+            if (callBank instanceof Object) call = callBank['fail'];
+            call && call(e);
+        }
+    };
+    return {
+        register: _register,
+        trigger: _trigger,
+        handleResponse: _handleResponse
+    }
 }
 
 // 方法主体
-var rootMinQuery = function (pageName, recoveryMode) {
+let rootMinQuery = function (pageName, recoveryMode) {
     // 检测pageName是否为字符串
     if (!typeof pageName === "string") {
         console.error(`MinQuery initialization require's a pageName, such as: app/pageNameOne;`);
@@ -510,7 +556,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
     }
 
     // 页面数据操作主体 
-    var
+    let
         // version
         version = "2.1.2",
         arr = [],
@@ -565,7 +611,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         pushStack: function (elems) {
 
             // Build a new MinQuery matched element set
-            var ret = MinQuery.merge(this.constructor(), elems);
+            let ret = MinQuery.merge(this.constructor(), elems);
 
             // Add the old object onto the stack (as a reference)
             ret.prevObject = this;
@@ -602,7 +648,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
 
         eq: function (i) {
             console.log(this);
-            var len = this.length,
+            let len = this.length,
                 j = +i + (i < 0 ? len : 0);
             return this.pushStack(j >= 0 && j < len ? [this[j]] : []);
         },
@@ -619,7 +665,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
     };
     // 集成extend module
     MinQuery.extend = MinQuery.fn.extend = function () {
-        var options, name, src, copy, copyIsArray, clone,
+        let options, name, src, copy, copyIsArray, clone,
             target = arguments[0] || {},
             i = 1,
             length = arguments.length,
@@ -706,7 +752,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
 
         isArraylike: function (obj) {
-            var length = obj.length,
+            let length = obj.length,
                 type = MinQuery.type(obj);
 
             if (type === "function") {
@@ -769,7 +815,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
         // 数据镜像：将已有数据镜像还原到某一原状态；
         recoveryObject: function (source, mirror, deep) {
-            var isArray, s;
+            let isArray, s;
             // 支持对象数据恢复，deep操作时支持数组
             if (MinQuery.isPlainObject(source) || (deep && MinQuery.isArray(source))) {
                 for (s in source) {
@@ -799,7 +845,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
         // args is for internal usage only
         each: function (obj, callback, args) {
-            var value,
+            let value,
                 i = 0,
                 length = obj.length,
 
@@ -856,7 +902,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
 
         // results is for internal usage only
         makeArray: function (arr, results) {
-            var ret = results || [];
+            let ret = results || [];
 
             if (arr != null) {
                 if (MinQuery.isArraylike(Object(arr))) {
@@ -876,7 +922,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
 
         merge: function (first, second) {
-            var len = +second.length,
+            let len = +second.length,
                 j = 0,
                 i = first.length;
 
@@ -890,7 +936,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
 
         grep: function (elems, callback, invert) {
-            var callbackInverse,
+            let callbackInverse,
                 matches = [],
                 i = 0,
                 length = elems.length,
@@ -910,7 +956,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
 
         // arg is for internal usage only
         map: function (elems, callback, arg) {
-            var value,
+            let value,
                 i = 0,
                 length = elems.length,
                 isArray = MinQuery.isArraylike(elems),
@@ -942,7 +988,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
         // 短横线[或其他连接符]转驼峰
         toHump: function (str, symbal) {
-            var reg = new RegExp((symbal ? symbal : "-") + "(\w)", 'g');
+            let reg = new RegExp((symbal ? symbal : "-") + "(\w)", 'g');
             return str.replace(reg, function ($0, $1) {
                 return $1.toUpperCase();
             });
@@ -960,7 +1006,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 console.error("The formatDate first param must be an Date() instance or timestamp!");
                 return date;
             }
-            var o = {
+            let o = {
                 "m+": date.getMonth() + 1, //月份
                 "d+": date.getDate(), //日
                 "h+": date.getHours(), //小时
@@ -970,7 +1016,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 "S": date.getMilliseconds() //毫秒
             };
             if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (date.getFullYear() + "").substr(4 - RegExp.$1.length));
-            for (var k in o)
+            for (let k in o)
                 if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
             return fmt;
         },
@@ -984,62 +1030,12 @@ var rootMinQuery = function (pageName, recoveryMode) {
 
     // 继承wx二次封装接口
     // 链式注册对象
-    var wxHandlerRegister = {};
-    // 链式注册三类异步处理函数
-    var registerWxHandler = function (mname) {
-        // 支持多次注册
-        wxHandlerRegister[mname] = {
-            fail: [],
-            cancel: [],
-            success: [],
-            complete: []
-        };
-        return {
-            fail(cb) {
-                wxHandlerRegister[mname].fail = cb;
-                return this;
-            },
-            error(cb) {
-                return this.fail(cb);
-            },
-            success(cb) {
-                wxHandlerRegister[mname].success = cb;
-                return this;
-            },
-            complete(cb) {
-                wxHandlerRegister[mname].complete = cb;
-                return this;
-            },
-            cancel(cb) {
-                wxHandlerRegister[mname].cancel = cb;
-            }
-        }
-    }
-    var triggerWxHandler = function (mname, method, res) {
-        if (wxHandlerRegister[mname] && wxHandlerRegister[mname][method]) {
-            var targetMethod = wxHandlerRegister[mname][method];
-            if (MinQuery.isFunction(targetMethod)) {
-                responseHandler(res, targetMethod, wxHandlerRegister[mname]);
-            }
-        }
-    }
-    // complete函数错误处理
-    var responseHandler = function (e, call, callBank) {
-        var _err = e.errMsg.split(":");
-        if (_err[1] === "ok" && e.statusCode == 200) {
-            if (MinQuery.isPlainObject(callBank)) call = callBank['success'];
-            call && call(e.data, {
-                errMsg: e.errMsg,
-                statusCode: e.statusCode
-            });
-        } else {
-            if (MinQuery.isPlainObject(callBank)) call = callBank['fail'];
-            call && call(e);
-        }
-    };
+    let wxHandlerRegister = {};
+    // 注册操作对象域
+    let asyncHandler = wxAsyncApiHandler(wxHandlerRegister);
     // Ajax 请求方法
     function ajaxRequest(_conf, data, call) {
-        var options = {
+        let options = {
             url: "",
             data: data,
             header: {
@@ -1050,17 +1046,17 @@ var rootMinQuery = function (pageName, recoveryMode) {
         }
         if (MinQuery.isPlainObject(_conf)) MinQuery.extend(options, _conf);
         else if (MinQuery.isString(_conf)) options.url = _conf;
-        var _fail = options.fail, _success = options.success, _complete = options.complete;
+        let _fail = options.fail, _success = options.success, _complete = options.complete;
         MinQuery.extend(options, {
-            fail(e) { triggerWxHandler("wxRequest", "fail", e); MinQuery.isFunction(_fail) && _fail(e) },
-            success(e) { triggerWxHandler("wxRequest", "success", e); MinQuery.isFunction(_success) && _success(e) },
-            complete(e) { responseHandler(e, call); triggerWxHandler("wxRequest", "complete", e); MinQuery.isFunction(_complete) && _complete(e); }
+            fail(e) { asyncHandler.trigger("wxRequest", "fail", e); MinQuery.isFunction(_fail) && _fail(e) },
+            success(e) { asyncHandler.trigger("wxRequest", "success", e); MinQuery.isFunction(_success) && _success(e) },
+            complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger("wxRequest", "complete", e); MinQuery.isFunction(_complete) && _complete(e); }
         })
         // 将method值转大写
         options.method = options.method.toUpperCase();
         wx.request(options);
         // 错误方法
-        return registerWxHandler("wxRequest");
+        return asyncHandler.register("wxRequest");
     }
     MinQuery.extend({
         $window: $windowInfo,
@@ -1068,25 +1064,25 @@ var rootMinQuery = function (pageName, recoveryMode) {
         scan(call) {
             wx.scanCode({
                 phoneNumber: phone,
-                fail(e) { triggerWxHandler(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { triggerWxHandler(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { responseHandler(e, call); triggerWxHandler(e.errMsg.split(":")[0], "complete", e) }
+                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
             });
-            return registerWxHandler("scanCode");
+            return asyncHandler.register("scanCode");
         },
         // makePhoneCall
         phoneCall(phone, call) {
             wx.makePhoneCall({
                 phoneNumber: phone,
-                fail(e) { triggerWxHandler(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { triggerWxHandler(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { responseHandler(e, call); triggerWxHandler(e.errMsg.split(":")[0], "complete", e) }
+                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
             });
-            return registerWxHandler("makePhoneCall");
+            return asyncHandler.register("makePhoneCall");
         },
         // showToast
         showToast(title, icon, delay, mask, call) {
-            var icons = {
+            let icons = {
                 loading: "loading",
                 success: "success"
             }
@@ -1108,11 +1104,11 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 title: title,
                 icon: icon ? icon : '',
                 duration: delay ? delay : 2000,
-                fail(e) { triggerWxHandler(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { triggerWxHandler(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { responseHandler(e, call); triggerWxHandler(e.errMsg.split(":")[0], "complete", e) }
+                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
             });
-            return registerWxHandler("showToast")
+            return asyncHandler.register("showToast")
         },
         // hideToast
         hideToast(delay) {
@@ -1127,11 +1123,11 @@ var rootMinQuery = function (pageName, recoveryMode) {
             wx.showActionSheet({
                 itemList: items,
                 itemColor: color ? color : "",
-                fail(e) { triggerWxHandler(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { triggerWxHandler(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { responseHandler(e, call); triggerWxHandler(e.errMsg.split(":")[0], "complete", e) }
+                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
             });
-            return registerWxHandler("showActionSheet")
+            return asyncHandler.register("showActionSheet")
         },
         showActionSheet: MinQuery.actionSheet,
         // showModal
@@ -1140,7 +1136,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 console.error("The Modal title and content type must be string!", title, content);
                 return;
             }
-            var options = {
+            let options = {
                 showCancel: true,
                 cancelText: "取消",
                 cancelColor: "#000000",
@@ -1158,11 +1154,11 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 cancelColor: options.cancelColor,
                 confirmText: options.confirmText,
                 confirmColor: options.confirmText,
-                fail(e) { triggerWxHandler(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { triggerWxHandler(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { responseHandler(e, call); triggerWxHandler(e.errMsg.split(":")[0], "complete", e) }
+                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
             });
-            return registerWxHandler("showModal");
+            return asyncHandler.register("showModal");
         },
         showModal: MinQuery.modal,
         // setNavigationBarTitle
@@ -1173,11 +1169,11 @@ var rootMinQuery = function (pageName, recoveryMode) {
             }
             wx.setNavigationBarTitle({
                 title: title,
-                fail(e) { triggerWxHandler(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { triggerWxHandler(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { responseHandler(e, call); triggerWxHandler(e.errMsg.split(":")[0], "complete", e) }
+                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
             })
-            return registerWxHandler("setNavigationBarTitle");
+            return asyncHandler.register("setNavigationBarTitle");
         },
         setNavigationBarTitle: MinQuery.navTitle,
         // NavigationBarLoading
@@ -1194,29 +1190,29 @@ var rootMinQuery = function (pageName, recoveryMode) {
         navigateTo(url, call) {
             wx.navigateTo({
                 url: url,
-                fail(e) { triggerWxHandler(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { triggerWxHandler(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { responseHandler(e, call); triggerWxHandler(e.errMsg.split(":")[0], "complete", e) }
+                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
             });
-            return registerWxHandler("navigateTo");
+            return asyncHandler.register("navigateTo");
         },
         redirectTo(url, call) {
             wx.redirectTo({
                 url: url,
-                fail(e) { triggerWxHandler(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { triggerWxHandler(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { responseHandler(e, call); triggerWxHandler(e.errMsg.split(":")[0], "complete", e) }
+                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
             });
-            return registerWxHandler("redirectTo");
+            return asyncHandler.register("redirectTo");
         },
         switchTab(url, call) {
             wx.switchTab({
                 url: url,
-                fail(e) { triggerWxHandler(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { triggerWxHandler(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { responseHandler(e, call); triggerWxHandler(e.errMsg.split(":")[0], "complete", e) }
+                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
             });
-            return registerWxHandler("switchTab");
+            return asyncHandler.register("switchTab");
         },
         navigateBack(pageNum) {
             wx.navigateBack({
@@ -1259,11 +1255,11 @@ var rootMinQuery = function (pageName, recoveryMode) {
         // 录音控制
         startRecord(call) {
             wx.startRecord({
-                fail(e) { triggerWxHandler(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { triggerWxHandler(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { responseHandler(e, call); triggerWxHandler(e.errMsg.split(":")[0], "complete", e) }
+                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
             })
-            return registerWxHandler("startRecord");
+            return asyncHandler.register("startRecord");
         },
         stopRecord(delay) {
             MinQuery.timeOut(wx.stopRecord, delay ? delay : 0, true);
@@ -1272,11 +1268,11 @@ var rootMinQuery = function (pageName, recoveryMode) {
         playVoice(filePath, call) {
             wx.playVoice({
                 filePath: filePath,
-                fail(e) { triggerWxHandler(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { triggerWxHandler(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { responseHandler(e, call); triggerWxHandler(e.errMsg.split(":")[0], "complete", e) }
+                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
             })
-            return registerWxHandler("playVoice");
+            return asyncHandler.register("playVoice");
         },
         pauseVoice(delay) {
             MinQuery.timeOut(wx.pauseVoice, delay ? delay : 0, true);
@@ -1294,7 +1290,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         // 注册固有静态keys
         registerInherentKey(key, description) {
             if (MinQuery.isPlainObject(key) && !description) {
-                for (var k in key) {
+                for (let k in key) {
                     MinQuery.inherentStaticKeys[k] = [k, key[k]];
                 }
             } else {
@@ -1306,7 +1302,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
     // 元素固有操作属性初始化
 
     // 全局接口，获取每一个运行中的页面、获取app数据
-    var appData;
+    let appData;
     MinQuery.extend({
         pages(pageName) {
             return $pageLoadedInstances.get(pageName);
@@ -1404,7 +1400,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 data = undefined;
             }
             if (!!this && this.length > 0) {
-                var self = this;
+                let self = this;
                 this.each(function () {
                     // 禁止触发Page固有事件
                     if (this.$selectorName === "page" || this.$selectorName === "app") {
@@ -1418,7 +1414,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                             console.error(`The ${this.$selectorName} event ${_type} has already bound as a inherit event callback!`);
                             return;
                         }
-                        var _page = self[0];
+                        let _page = self[0];
                         // 检测是否为以存在的键
                         !(_type in _page) && (_page[_type] = function (e) {
                             // 为Page自定义番薯传递数据
@@ -1445,11 +1441,11 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 triggerCall = data;
                 data = undefined;
             }
-            var triggerType = iscatch === true ? 'catch' : 'bind';
+            let triggerType = iscatch === true ? 'catch' : 'bind';
             if (!!this && this.length > 0) {
                 // 验证是否触发Page固有事件
-                var eroute, res;
-                var self = this;
+                let eroute, res;
+                let self = this;
                 this.each(function () {
                     // 禁止触发Page固有事件
                     if (this.$selectorName === "page" || this.$selectorName === "app") {
@@ -1457,7 +1453,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                             console.error(`You can not trigger an ${this.$selectorName} inherent event named [${_type}]!`);
                             return;
                         } else {
-                            var _page = self[0];
+                            let _page = self[0];
                             if (_page[_type] && MinQuery.isFunction(_page[_type])) {
                                 MinQuery(this.$selectorName)[0][_type](data);
                                 return;
@@ -1480,9 +1476,9 @@ var rootMinQuery = function (pageName, recoveryMode) {
             if (typeof offCall === "boolean") {
                 iscatch = offCall;
             }
-            var triggerType = iscatch === true ? 'catch' : 'bind';
+            let triggerType = iscatch === true ? 'catch' : 'bind';
             if (!!this && this.length > 0) {
-                var eroute;
+                let eroute;
                 this.each(function () {
                     eventOperation.set(this, `${triggerType}.${_type}`, false);
                     MinQuery.isFunction(offCall) && offCall.call(this);
@@ -1500,9 +1496,9 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 oneceCall = data;
                 data = undefined;
             }
-            var triggerType = !!iscatch ? 'catch' : 'bind';
+            let triggerType = !!iscatch ? 'catch' : 'bind';
             MinQuery(this)[triggerType](_type, data, function () {
-                var etype = _type, ecall = oneceCall;
+                let etype = _type, ecall = oneceCall;
                 MinQuery(this).off(etype, function () { console.log("OFF Event:" + _type) }, triggerType);
                 ecall.apply(this, arguments);
             })
@@ -1510,17 +1506,17 @@ var rootMinQuery = function (pageName, recoveryMode) {
         }
     });
     // Page固有事件处理器
-    var pageInheritEventHandlers = {};
+    let pageInheritEventHandlers = {};
     // 页面固有事件名称管理器，用于防止用户再次注册固有事件。并且可以进行事件查询操作。
     MinQuery.pageInheritEventKVPair = {};
 
-    var pageEventMiddleware;
+    let pageEventMiddleware;
     // 注册Page固有事件到MinQuery事件代理器
     MinQuery.inheritEventRegister = function (_c_e_name, _middleware) {
         // 如果是外部注册，则添加到主事件列表中
         MinQuery.pageInheritEventList.indexOf(_c_e_name) === -1 && MinQuery.pageInheritEventList.push(_c_e_name);
         // 生成字典
-        var noOnEN = Array.from(_c_e_name);
+        let noOnEN = Array.from(_c_e_name);
         // 去掉on开头
         noOnEN.splice(0, 2)
         // 降级大写字母
@@ -1557,7 +1553,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 MinQuery.isReady = false;
             };
             // 优先在事件管理器上查询并执行对应去掉on的自定义事件
-            var ret = eventOperation.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, e);
+            let ret = eventOperation.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, e);
             // 未查询到自定义事件是执行查询原始事件名称事件
             if (ret === '[No Handler]') {
                 // 查询执行元素原生事件
@@ -1601,7 +1597,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 MinQuery.isReady = false;
             };
             // 优先在事件管理器上查询并执行对应去掉on的自定义事件
-            var ret = eventOperation.get(`${MinQuery.selectorsBank.page[0]}.page`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, e);
+            let ret = eventOperation.get(`${MinQuery.selectorsBank.page[0]}.page`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, e);
             // 未查询到自定义事件是执行查询原始事件名称事件
             if (ret === '[No Handler]') {
                 // 查询执行元素原生事件
@@ -1618,11 +1614,11 @@ var rootMinQuery = function (pageName, recoveryMode) {
 
 
     // a hook for event set/get
-    var eventOperation = {
+    let eventOperation = {
         // 设置对应的元素事件到事件管理器中并给当前元素写入事件查询地址
         set: function (elem, eventkeys, method, binddata) {
             if (!MinQuery.isUndefined(elem) && !MinQuery.isEmpty(eventkeys)) return;
-            var elekeys = `${elem.$selectorType}.${elem.$selectorName}`,
+            let elekeys = `${elem.$selectorType}.${elem.$selectorName}`,
                 eleEventRoute = `${elekeys}.$events.${eventkeys}`,
                 eventManagerRoute = `${elekeys}.${eventkeys}`,
                 hasEvent = MinQuery.getData(eleEventRoute),
@@ -1644,7 +1640,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 // 设置当前事件函数到对应的事件存储器上,支持元素事件绑定和Page事件绑定
                 // 将registerEvent事件处理为数组处理函数集，注册事件只能在绑定事件触发时才会被触发
                 if (isRegisterEvent) {
-                    var rglist = MinQuery.dataProcessor(MinQuery.eventManager, `${eventManagerRoute}.method`);
+                    let rglist = MinQuery.dataProcessor(MinQuery.eventManager, `${eventManagerRoute}.method`);
                     !rglist && (rglist = []);
                     rglist.push(method);
                     method = rglist;
@@ -1668,16 +1664,16 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 eventkeys = elekeys[1];
                 elekeys = elekeys[0];
             };
-            var noFunc = "[No Handler]";
+            let noFunc = "[No Handler]";
             if (!elekeys) {
                 return noFunc;
             }
             // 查询元素
-            var eventEle = MinQuery.getData(MinQuery.eventManager, elekeys),
+            let eventEle = MinQuery.getData(MinQuery.eventManager, elekeys),
                 // 查询事件
                 eventObj = eventEle ? MinQuery.getData(eventEle, eventkeys) : false;
             // 查询注册扩展事件
-            var regObj = eventEle ? MinQuery.getData(eventEle, `registerEvent.${eventkeys.split(".").pop()}`) : false,
+            let regObj = eventEle ? MinQuery.getData(eventEle, `registerEvent.${eventkeys.split(".").pop()}`) : false,
                 // 将事件绑定的data数据绑定到eventdata事件数据的$data字段上
                 dataArr = [], ei = 0;
             if (!!eventObj && !!eventObj.active) {
@@ -1725,7 +1721,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
     }
 
     // 元素事件处理集
-    var elementEventHandlers = {
+    let elementEventHandlers = {
         // 处理bind事件
         "$bind": function (e) {
             findElementEventHandler(e, "bind");
@@ -1736,20 +1732,20 @@ var rootMinQuery = function (pageName, recoveryMode) {
         }
     }
     // 获取元素处理事件
-    var findElementEventHandler = function (e, _type) {
+    let findElementEventHandler = function (e, _type) {
         // 做target与currentTarget之间的权衡选择，首选target
         // id获取来源是否是
         // 解决小程序catch与bind时出现的事件错误
-        var tid = _type === "catch"
-            ? e.currentTarget.id
-            : e.target.id
-                ? e.target.id
-                : e.currentTarget.id,
-            tcs = _type === "catch"
-                ? e.currentTarget.dataset.mClass
-                : e.target.dataset.mClass
-                    ? e.target.dataset.mClass
-                    : e.currentTarget.dataset.mClass;
+        let cur_id = MinQuery.getData(e, 'currentTarget.id'),
+            tar_id = MinQuery.getData(e, 'target.id'),
+            cur_class = MinQuery.getData(e, 'currentTarget.dataset.mClass'),
+            tar_class = MinQuery.getData(e, 'target.dataset.mClass');
+        let tid = cur_id
+            ? cur_id
+            : tar_id,
+            tcs = cur_class
+                ? cur_class
+                : tar_class;
         // event对象扩展
         if (e.type === "submit") MinQuery.extend(e, {
             // 设置访问formData快捷接口
@@ -1762,19 +1758,20 @@ var rootMinQuery = function (pageName, recoveryMode) {
         MinQuery.extend(e, {
             // 访问当前元素
             current(key) {
+                let _target = !!this.currentTarget ? this.currentTarget : this.target;
                 if (key) {
-                    return MinQuery.getData(this.currentTarget, key);
-                } else return this.currentTarget
+                    return MinQuery.getData(_target, key);
+                } else return _target
             },
             // 访问当前元素data属性
             data(key) {
-                var dataset = this.current(`dataset`);
+                let dataset = this.current(`dataset`);
                 if (key) return dataset[key];
                 else return dataset;
             }
         })
         // 优先查询ID绑定池并执行;渲染层事件触发不存在返回数据
-        var ret = tid ? eventOperation.get(`${MinQuery.selectorsBank["#"][0]}.${tid}`, `${_type}.${e.type}`, e) : "[No Handler]";
+        let ret = tid ? eventOperation.get(`${MinQuery.selectorsBank["#"][0]}.${tid}`, `${_type}.${e.type}`, e) : "[No Handler]";
         // 如果不存在ID事件绑定则查询data-min-class绑定版
         (ret === "[No Handler]") && tcs && eventOperation.get(`${MinQuery.selectorsBank["."][0]}.${tcs}`, `${_type}.${e.type}`, e);
     }
@@ -1788,11 +1785,11 @@ var rootMinQuery = function (pageName, recoveryMode) {
             return MinQuery.getData(MinQuery.selectorsBank[selector][0]);
         }
         // 元素按id或data-min-class查询
-        var prevfix = selector[0];
-        var _elarr = Array.from(selector);
+        let prevfix = selector[0];
+        let _elarr = Array.from(selector);
         _elarr.shift();
-        var elem = _elarr.join("");
-        var eleType = "", eleName = "", f_elem, r_path = "";
+        let elem = _elarr.join("");
+        let eleType = "", eleName = "", f_elem, r_path = "";
         if (selector.length > 1 && prevfix in MinQuery.selectorsBank) {
             // 查询类型
             eleType = MinQuery.selectorsBank[prevfix][0];
@@ -1801,7 +1798,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
             eleName = elem;
         } else if (selector.length === 1 && MinQuery.selectorsBank[prevfix][0] === '$all') {
             // 查询全部
-            var eles = [];
+            let eles = [];
             MinQuery.each(MinQuery.registeredElements, (i, r) => {
                 eles.push(MinQuery.getData(r));
             });
@@ -1815,7 +1812,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         } else {
             MinQuery.registeredElements.push(r_path);
             // 获取元素初始化对象
-            var newEleAttr = $mq_config.getElementInitialData();
+            let newEleAttr = $mq_config.getElementInitialData();
             // 元素所属类型
             newEleAttr.$selectorType = eleType;
             // 去前缀元素名称
@@ -1827,7 +1824,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         }
     };
     // page initial object
-    var $pageInitObject = {
+    let $pageInitObject = {
         "$pageIndicator": MinQuery.pageName,
         "$selectorType": "$page",
         "$selectorName": "page",
@@ -1845,22 +1842,22 @@ var rootMinQuery = function (pageName, recoveryMode) {
     };
 
     // app initial object
-    var $appInitObject = {
+    let $appInitObject = {
         "$selectorType": "$app",
         "$selectorName": "app"
     }
     // 下一步，使pageInit继承MinQuery，抽出MinQuery不在进行重复性的初始化，使用extend方法
     // Page主选择器
-    var pageInit = function (selector) {
+    let pageInit = function (selector) {
         if (!selector) {
             return this;
         }
         if (MinQuery.isString(selector)) {
-            var _selectors = selector.split(","), multis, tar_selectorTypes = [], s = 0;
+            let _selectors = selector.split(","), multis, tar_selectorTypes = [], s = 0;
             for (; s < _selectors.length; s++) {
-                var _sele = _selectors[s];
+                let _sele = _selectors[s];
                 multis = {};
-                var _lowsele = _sele.toLowerCase();
+                let _lowsele = _sele.toLowerCase();
                 // 当前页面对象查询
                 if (_lowsele === "page") {
                     tar_selectorTypes.push(MinQuery.selectorsBank[_lowsele][0]);
@@ -1910,7 +1907,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
             // 执行加载函数
             if (!MinQuery.pageInjected) {
                 // 首先运行主体注册函数
-                var res = selector(MinQuery);
+                let res = selector(MinQuery);
                 if (MinQuery.pageName === "app") {
                     MinQuery.extend($appInitObject, pageInheritEventHandlers);
                     // 启动当前小程序的App初始化函数
@@ -1946,10 +1943,11 @@ var rootMinQuery = function (pageName, recoveryMode) {
         "$__priv_keys__": "To cache the element private options!"
     });
     // 用于操作元素的私有属性方法，此设置不参与视图层更新操作
-    var elem_priv = {
+    let elem_priv = {
         priv_keys: "$__priv_keys__",
-        get(ele, _type) {
-            return MinQuery.getData(ele, `${this.priv_keys}.${_type}`);
+        get(ele, _type, value, arrPush) {
+            let cur_priv = MinQuery.getData(ele, `${this.priv_keys}.${_type}`);
+            return !!cur_priv ? cur_priv : !!value ? this.set(ele, _type, value, arrPush) : undefined;
         },
         set(ele, _type, value, arrPush) {
             if (ele) {
@@ -1960,12 +1958,13 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 } else {
                     ele[this.priv_keys][_type] = value;
                 }
+                return ele[this.priv_keys][_type];
             }
         },
         access(ele, _type, key, value) {
             if (ele) {
-                var curPriv = !ele[this.priv_keys] ? (ele[this.priv_keys] = {}) : ele[this.priv_keys];
-                var curType = !curPriv[_type]
+                let curPriv = !ele[this.priv_keys] ? (ele[this.priv_keys] = {}) : ele[this.priv_keys];
+                let curType = !curPriv[_type]
                 if (curType) {
                     if (MinQuery.isPlainObject(curType) && !!key) {
                         !!value ? (curType[key] = value) : curType = key;
@@ -2000,18 +1999,18 @@ var rootMinQuery = function (pageName, recoveryMode) {
     // 公用元素属性访问器
     MinQuery.fn.extend({
         eleAttrAccess(_type, handler, key, value) {
-            var i = 0, len = this.length, ele;
+            let i = 0, len = this.length, ele;
             !MinQuery.isFunction(handler) && (handler = function () { });
             for (; i < len;) {
                 ele = this[i++];
-                var _path = `${ele.$selectorType}.${ele.$selectorName}.${_type}.${key}`,
+                let _path = `${ele.$selectorType}.${ele.$selectorName}.${_type}.${key}`,
                     _eledt = ele[_type];
                 if (ele.$selectorName === "page") {
                     _path = `${_type}.${key}`;
                     _eledt = ele.data[_type];
                 }
                 // 执行自定义处理器
-                var result = handler.call(ele, _path, _eledt, key, value);
+                let result = handler.call(ele, _path, _eledt, key, value);
                 if (!!result && result.$__force_return__) return result.returns;
                 if (!!result && result.$__force_continue__) continue;
                 if (typeof key === "string") {
@@ -2032,7 +2031,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
         config(key, value) {
             return this.eleAttrAccess('$cf', function (_path, _eledata, k, v) {
-                var _cf = elem_priv.get(this, "$cf-configuration"), plainKey = false, stringKey = false;
+                let _cf = elem_priv.get(this, "$cf-configuration"), plainKey = false, stringKey = false;
                 if (MinQuery.isString(k) && !!v || (plainKey = MinQuery.isPlainObject(k))) {
                     if (plainKey) {
                         $.each(k, (kk, kv) => {
@@ -2042,21 +2041,21 @@ var rootMinQuery = function (pageName, recoveryMode) {
                     if (!_cf) {
                         elem_priv.set(this, "$cf-configuration", MinQuery.setData(k, v, true, true));
                     } else {
-                        var _hook = MinQuery.setData(k, v, true, true), _hk;
+                        let _hook = MinQuery.setData(k, v, true, true), _hk;
                         for (_hk in _hook) _cf[_hk] = _hook[_hk];
                     }
                     return {
                         $__force_continue__: true
                     }
                 } else if (!k || (stringKey = MinQuery.isString(k)) && !v) {
-                    var operate = {};
+                    let operate = {};
                     if (stringKey) operate = _cf[k].get();
                     else {
                         delete _cf.__length__;
                         delete _cf.__paths__;
                         MinQuery.each(_cf, function (confName, confHook) {
                             operate[confName] = function (value) {
-                                var _hook = confHook;
+                                let _hook = confHook;
                                 if (!!value) _hook.set(value);
                                 else return _hook.get();
                             };
@@ -2084,8 +2083,8 @@ var rootMinQuery = function (pageName, recoveryMode) {
         stop(jumpToEnd) {
             this.each(function () {
                 console.log("ANI STOPPed")
-                var _queTime = elem_priv.get(this, "$animation-queue-time");
-                var _queFunc = elem_priv.get(this, "$animation-queue-func");
+                let _queTime = elem_priv.get(this, "$animation-queue-time");
+                let _queFunc = elem_priv.get(this, "$animation-queue-func");
                 // 销毁所有动画队列
                 if (_queTime instanceof Array) {
                     MinQuery.each(_queTime, (i, e) => {
@@ -2109,7 +2108,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
         // animation step setting
         animation(animateStepFunc, speed, easing, origin) {
-            var config = {
+            let config = {
                 origin: "50% 50%",
                 speed: 1000,
                 easing: "ease",
@@ -2118,7 +2117,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
             typeof speed === 'number' ? (config.speed = speed) : MinQuery.isPlainObject(speed) ? MinQuery.extend(config, speed) : null;
             MinQuery.isString(easing) && (config.easing = easing);
             MinQuery.isString(origin) && (config.origin = origin);
-            var nativeCf = {
+            let nativeCf = {
                 transformOrigin: config.origin,
                 duration: config.speed,
                 timingFunction: config.easing,
@@ -2126,18 +2125,18 @@ var rootMinQuery = function (pageName, recoveryMode) {
             };
             this.each(function () {
                 // 获取或是创建动画
-                var animateObj = this.$animationObject
+                let animateObj = this.$animationObject
                     ? this.$animationObject
                     : (this.$animationObject = wx.createAnimation(nativeCf))
                 animateStepFunc.call(animateObj, animateObj);
                 // 动画当前步骤配置
                 animateObj.step(nativeCf);
                 // 获取通过delay预先设置的延时
-                var delayTime = elem_priv.get(this, "$animation-delay") || 0;
+                let delayTime = elem_priv.get(this, "$animation-delay") || 0;
                 // 重置animationDelay
                 elem_priv.set(this, "$animation-delay", 0);
                 // 延时更新动画数据
-                var aniQueueMet = function () {
+                let aniQueueMet = function () {
                     if (!!elem_priv.get(this.ele, "$animation-to-end")) {
                         console.log(this.stepCF)
                         this.stepCF.delay = 0;
@@ -2159,15 +2158,15 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
         // 基于css创建动画：stylesGetFunc[接收一个返回style字符串或是对象的匿名函数，或是直接的style字符串或对象]、speed[动画执行时长，以毫秒计算，整数形式，默认200ms]、bezier[支持贝塞尔曲线函数，字符串形式，不填则默认ease]、targetStyleArr[需要进行动画过度的目标样式数组，如：height；没有则默认all]
         cssAnimation(stylesGetFunc, speed, bezier, targetStyleArr) {
-            var aniStyles;
+            let aniStyles;
             // 校验贝塞尔曲线函数
-            var getBezier = function (str) {
+            let getBezier = function (str) {
                 if (!MinQuery.isString(str)) {
                     return "ease";
                 }
-                var _matchs = /cubic-bezier\(([^*]+)\)/g.exec(str);
+                let _matchs = /cubic-bezier\(([^*]+)\)/g.exec(str);
                 if (!!_matchs && _matchs.length === 2) {
-                    var _vs = _matchs[1].split(",");
+                    let _vs = _matchs[1].split(",");
                     if (_vs.length === 4) {
                         return _matchs[0];
                     } else {
@@ -2186,15 +2185,15 @@ var rootMinQuery = function (pageName, recoveryMode) {
                 } else {
                     aniStyles = stylesGetFunc;
                 }
-                var _transition = `transition: ${MinQuery.isArray(targetStyleArr) ? targetStyleArr.join(" ") : "all"} ${typeof speed === "number" ? speed : 200}ms ${getBezier(bezier)};`;
+                let _transition = `transition: ${MinQuery.isArray(targetStyleArr) ? targetStyleArr.join(" ") : "all"} ${typeof speed === "number" ? speed : 200}ms ${getBezier(bezier)};`;
                 // 样式继承
                 aniStyles = $csscontrol.styleExtend(aniStyles, _transition);
                 // 获取通过delay预先设置的延时
-                var delayTime = elem_priv.get(this, "$animation-delay") || 0;
+                let delayTime = elem_priv.get(this, "$animation-delay") || 0;
                 // 重置animationDelay
                 elem_priv.set(this, "$animation-delay", 0);
                 // 延时更新动画数据
-                var aniQueueMet = function () {
+                let aniQueueMet = function () {
                     if (!!elem_priv.get(this.ele, "$animation-to-end")) {
                         this.aniStyle = $csscontrol.styleExtend(this.aniStyle, `transition: none;`);
                     }
@@ -2212,7 +2211,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         // style 样式设置，支持样式字符串、单个样式键值和多样式对象设置三种写法
         // 支持$.css("color:red;height:12px");$.css("color","red"),$.css({"color": "red","height": "12px"});
         css(key, value, animationKey) {
-            var i = 0, len = this.length, ele;
+            let i = 0, len = this.length, ele;
             for (; i < len;) {
                 ele = this[i++];
                 // 获取当前样式的JSON格式
@@ -2242,7 +2241,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
         },
         // 检测某个样式是否存在
         hasClass(className, hover) {
-            var i = 0, len = this.length, ele;
+            let i = 0, len = this.length, ele;
             for (; i < len;) {
                 ele = this[i++];
                 if (typeof className === "function") className = className.call(ele);
@@ -2274,7 +2273,7 @@ var rootMinQuery = function (pageName, recoveryMode) {
             this.each(function () {
                 if (!!classTwo) {
                     if (MinQuery.isString(classOne) && MinQuery.isString(classTwo)) {
-                        var ho = MinQuery(this).hasClass(classOne, hover), ht = MinQuery(this).hasClass(classTwo, hover);
+                        let ho = MinQuery(this).hasClass(classOne, hover), ht = MinQuery(this).hasClass(classTwo, hover);
                         if (ho && ht) {
                             // 同时存在时去掉第二个样式，保留第一个
                             MinQuery(this).removeClass(classTwo, hover);
@@ -2316,34 +2315,101 @@ var rootMinQuery = function (pageName, recoveryMode) {
     });
     // Canvas 操作
     MinQuery.fn.extend({
-        canvas(operationCall) {
-            var i = 0, len = this.length, ele, cobj = {};
+        canvas(operationCall, extraMovementCall) {
+            let i = 0, len = this.length, ele, cobj = {};
             for (; i < len;) {
-                var self = this[i++];
-                var cid = self.$selectorName;
-                var context = wx.createCanvasContext(cid);
-                if (MinQuery.isFunction(operationCall)) {
-                    operationCall.call(context);
-                    context.draw();
-                } else if (operationCall === true) {
-                    if (len > 1) cobj[self.$selectorName] = context;
-                    else return context;
+                ele = this[i++];
+                let cid = ele.$selectorName,
+                    callIsFunction = MinQuery.isFunction(operationCall),
+                    context,
+                    isPrevContext = !callIsFunction && operationCall.hasOwnProperty('canvasId') && operationCall.hasOwnProperty("actions") && operationCall.hasOwnProperty("path");
+                // 当创建了canvas动作时
+                if (isPrevContext) {
+                    // 当只创建了canvas上下文时，直接返回上下文
+                    context = elem_priv.get(ele, "$canvas-context", operationCall);
+                    if (MinQuery.isFunction(extraMovementCall)) extraMovementCall.call(context, context);
+                    if (!!context.canvasId) context.draw();
+                    else wx.drawCanvas({
+                        canvasId: cid,
+                        actions: context.getActions() // 获取绘图动作数组
+                    });
+                } else {
+                    // 当通过原型方法创建时，则开始绘制
+                    context = elem_priv.get(ele, "$canvas-context", wx.createCanvasContext(cid));
+                    if (callIsFunction) {
+                        operationCall.call(context, context);
+                        context.draw();
+                    }
                 }
+                // 每次均返回context上下文，便于自定义使用外部方法进行画布的编辑工作
+                if (len > 1) cobj[ele.$selectorName] = context;
+                else return context;
+            }
+            if (MinQuery.isEmptyObject(cobj))
+                return this;
+            else return cobj;
+        },
+        vedio() {
+            let i = 0, len = this.length, ele, cobj = {};
+            for (; i < len;) {
+                ele = this[i++];
+                let vid = ele.$selectorName,
+                    context = MinQuery.vedio.call(ele, vid);
+                // 每次均返回context上下文，便于自定义使用外部方法进行画布的编辑工作
+                if (len > 1) cobj[ele.$selectorName] = context;
+                else return context;
             }
             if (MinQuery.isEmptyObject(cobj))
                 return this;
             else return cobj;
         }
     });
-   
-
+    // 创建独立canvas画布对象
+    MinQuery.extend({
+        canvas(canvasTag, contextMovementCall) {
+            if (!MinQuery.isString(canvasTag)) return;
+            let priv_context_path = `$canvas-context-${canvasTag}`;
+            let current_context = elem_priv.get(this, priv_context_path, wx.createContext());
+            if (MinQuery.isFunction(contextMovementCall)) {
+                contextMovementCall.call(current_context, current_context);
+            }
+            return current_context;
+        },
+        vedio(vedioId) {
+            var context = elem_priv.get(this, "$vedio-context", wx.createVideoContext(vedioId));
+            return {
+                play: context.play,
+                pause: context.pause,
+                seek: context.seek,
+                send(message) {
+                    context.sendDanmu({
+                        text: message,
+                        color: MinQuery.randomColor()
+                    })
+                }
+            }
+        },
+        randomColor() {
+            let rgb = [], i = 0;
+            for (; i < 3; ++i) {
+                let color = Math.floor(Math.random() * 256).toString(16)
+                color = color.length == 1 ? '0' + color : color
+                rgb.push(color)
+            }
+            return '#' + rgb.join('')
+        }
+    })
     // 设置数据[keyString'设置查询的字符串'，keyValue'设置值']
-    var setCurrentPageData = function (keyString, keyValue, stayFormat, detecteInerit) {
+    /**
+     * stayFormat Boolean 用于标识单个数据设置时，是否保留对象状态，而非返回当前当个hook
+     * detdetecteInerit Boolean 用于标识是否进行框架固有key检测，避免无意间破坏框架固有属性规则
+     */
+    let setCurrentPageData = function (keyString, keyValue, stayFormat, detecteInerit) {
         // 将数据格式统一规划为对象方式
-        var i = 0, returns = {
+        let i = 0, returns = {
             __length__: 0,
             __paths__: []
-        };
+        }, k, ka, ik, fk, oldValue;
         if (MinQuery.isString(keyString) && !!keyValue) {
             keyString = {
                 [keyString]: keyValue
@@ -2352,24 +2418,26 @@ var rootMinQuery = function (pageName, recoveryMode) {
         if (!MinQuery.isPlainObject(keyString))
             return;
         // 限制开发者直接修改框架固有管理对象属性，导致管理出现混乱
-        for (var k in keyString) {
+        for (k in keyString) {
             // 执行$watch
             detecteWatchTarget(k, keyString[k]);
 
             if (MinQuery.trim(k) == "")
                 return;
-            var ka = k.split(".");
+            ka = k.split(".");
             i++;
             if (detecteInerit === true) {
-                for (var ik in MinQuery.inherentStaticKeys) {
+                for (ik in MinQuery.inherentStaticKeys) {
                     if (ka.indexOf(ik) !== -1) {
                         console.error(`You can not directly to tamper with MinQuery inherent data attribute ${ik}。 Please check MinQuery attribute "inherentStaticKeys" to avoid more conflict!`);
                         return undefined;
                     }
                 }
             }
+            oldValue = MinQuery.getData(k);
+            if (oldValue === keyString[k]) delete keyString[k];
             // 获取操作key的最后一位，作为当前返回操作的标识
-            var fk = ka[ka.length - 1];
+            fk = ka[ka.length - 1];
             returns[fk] = {
                 // 操作hook的目标查询路径
                 __path__: k,
@@ -2386,19 +2454,15 @@ var rootMinQuery = function (pageName, recoveryMode) {
             returns.__length__ = i;
             returns.__paths__.push(fk);
         }
-        // 如果存在page对象则将数据绑定到page对象上
-        // 小程序原型方法
-        if (keyString instanceof Object) {
-            !!MinQuery.pageInstance
-                && MinQuery.pageInstance.setData(keyString);
-        } else if (typeof keyString === "string") {
-            !!MinQuery.pageInstance
-                && MinQuery.pageInstance.setData({
-                    [keyString]: keyValue
-                });
+        if (!MinQuery.isEmptyObject(keyString)) {
+            console.log("setData:",keyString)
+            !!MinQuery.pageInstance && console.info("setData!!");
+            // 如果存在page对象则将数据绑定到page对象上
+            // 小程序原型方法
+            !!MinQuery.pageInstance && MinQuery.pageInstance.setData(keyString);
+            // 同步更新框架上的数据
+            MinQuery.dataProcessor($pageInitObject.data, keyString);
         }
-        // 同步更新框架上的数据
-        MinQuery.dataProcessor($pageInitObject.data, keyString, keyValue);
         // 如果
         stayFormat !== true && returns.__length__ === 1 && (returns = returns[returns.__paths__[0]]);
         // 返回一个后期操作hook，
@@ -2440,10 +2504,10 @@ var rootMinQuery = function (pageName, recoveryMode) {
         __data_watchs: {}
     })
     // 数据监视检索方法
-    var detecteWatchTarget = function (_path, _newValue) {
+    let detecteWatchTarget = function (_path, _newValue) {
         if (!_path) return;
-        for (var w in MinQuery.__data_watchs) {
-            var _w = MinQuery.__data_watchs[w];
+        for (let w in MinQuery.__data_watchs) {
+            let _w = MinQuery.__data_watchs[w];
             if (_w.isFuzzy === true) {
                 _path.indexOf(_w.path) !== -1 && _w.call(_newValue, MinQuery.getData(_path), _path);
             } else {

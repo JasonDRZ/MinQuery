@@ -1,14 +1,14 @@
 <!--index.wxml-->
 <view class="header_container">
-  <view class="current_location active">
+  <view class="current_location active" bindtap="location">
     <text class="header_text">环球中心环球中心</text></view>
-  <view class="search_box header_text">
+  <view class="search_box header_text" bindtap="pushSwiper">
     <input bindtap="" placeholder="搜索" />
   </view>
 </view>
 <view class="banner_container">
   <swiper indicator-dots="{{banner.indicatorDots}}"
-    autoplay="{{banner.autoplay}}" interval="{{banner.interval}}" duration="{{banner.duration}}" >
+    autoplay="{{banner.autoplay}}" current="{{banner.current}}" interval="{{banner.interval}}" duration="{{banner.duration}}" bindchange="onChange">
     <block wx:for="{{banner.imgUrls}}">
       <swiper-item width="355" height="150" class="banner_item" style="background-image: url({{item}});">
       </swiper-item>

@@ -9,6 +9,7 @@ Page({
         'http://img06.tooopen.com/images/20160818/tooopen_sy_175866434296.jpg',
         'http://img06.tooopen.com/images/20160818/tooopen_sy_175833047715.jpg'
       ],
+      current: 0,
       indicatorDots: true,
       autoplay: false,
       interval: 5000,
@@ -24,6 +25,21 @@ Page({
   },
   onReady(){
     console.log(__wxRoute)
+  },
+  onChange(e){
+    console.log(e);
+  },
+  pushSwiper(){
+    this.data.banner.imgUrls.push(this.data.banner.imgUrls[0]);
+    this.setData({
+      'banner.imgUrls': this.data.banner.imgUrls
+    })
+
+  },
+  location(){
+    this.setData({
+      'banner.current': 2
+    })
   },
   onLoad: function () {
     console.log(__wxRoute)
