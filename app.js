@@ -7,13 +7,14 @@ var $ = require("MinQuery/index").load("app");
 //   });
 $(()=>{
   var app = $("app");
-  var globalData = $.setData('globalData',{});
+  var globalData = $.setData('globalData');
   app.on('launch',function(){
     console.info("App has onLaunched!!!!!!!!!!!!!!!")
-  }).bind('getUserInfo',function(cb){
+  })
+  $.$on('getUserInfo',function(cb){
     var userInfo = globalData.get('userInfo');
     if(!!userInfo){
-      typeof cb == "function" && cb(userInfo);
+      typeof cb == "function" && $.$call(cb,userInfo);
     }else{
       //调用登录接口
       wx.login({
@@ -21,14 +22,14 @@ $(()=>{
           wx.getUserInfo({
             success: function (res) {
               globalData.set('userInfo',res.userInfo);
-              typeof cb == "function" && cb(res.userInfo);
+              typeof cb == "function" && $.$call(cb,res.userInfo);
             }
           })
         }
       })
     }
   })
-  
+
   console.log($.getData('globalData'),app)
 })
 

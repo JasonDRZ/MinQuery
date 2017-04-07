@@ -73,7 +73,822 @@ const $mq_config = {
         }
     }
 }
-// 原型工具方法
+const wxMethodsParamsConfig = [{
+    // 文件上传、下载
+    // 方法名称
+    name: 'uploadFile',
+    // 必填参数，或者说支持快捷设置的参数，最后多一个config参数用于统一设置选填参数
+    param_def: [['url'], ['filePath'], ['name']],
+    // 选填参数
+    param_nor: [['header', 'object'], ['formData', 'object']]
+}, {
+    name: 'downloadFile',
+    param_def: [['url']],
+    param_nor: [['header', 'object']]
+}, {
+    // webSocket
+    name: 'connectSocket',
+    param_def: [['url']],
+    param_nor: [['data', 'object'], ['header', 'object'], ['method']]
+}, {
+    // 只有名称的则直接返回传入参数后的方法
+    name: 'onSocketOpen'
+}, {
+    name: 'onSocketError'
+}, {
+    name: 'sendSocketMessage',
+    // 多类型支持
+    param_def: [['data', 'string|uint8array']],
+    param_nor: []
+}, {
+    name: 'onSocketMessage'
+}, {
+    name: 'closeSocket'
+}, {
+    name: 'onSocketClose'
+}, {
+    // 图片
+    name: 'chooseImage',
+    param_def: [['count', 'number']],
+    param_nor: [['sizeType', 'array'], ['sourceType', 'array']]
+}, {
+    name: 'previewImage',
+    param_def: [['urls', 'array']],
+    param_nor: [['current']]
+}, {
+    name: 'getImageInfo',
+    param_def: [['src']],
+    param_nor: []
+}, {
+    // 录音
+    name: 'startRecord',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'stopRecord'
+}, {
+    // 音频播放
+    name: 'playVoice',
+    param_def: [['filePath']],
+    param_nor: []
+}, {
+    name: 'pauseVoice'
+}, {
+    name: 'stopVoice'
+}, {
+    // 音乐播放控制
+    name: 'getBackgroundAudioPlayerState',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'playBackgroundAudio',
+    param_def: [['dataUrl']],
+    param_nor: [['title'], ['coverImgUrl']]
+}, {
+    name: 'pauseBackgroundAudio'
+}, {
+    name: 'seekBackgroundAudio',
+    param_def: [['position']],
+    param_nor: []
+}, {
+    name: 'stopBackgroundAudio'
+}, {
+    name: 'onBackgroundAudioPlay'
+}, {
+    name: 'onBackgroundAudioPause'
+}, {
+    name: 'onBackgroundAudioStop'
+}, {
+    // 选择视频
+    name: 'chooseVideo',
+    param_def: [],
+    param_nor: [['sourceType', 'array'], ['maxDuration', 'number'], ['camera']]
+}, {
+    // 文件
+    name: 'saveFile',
+    param_def: [['tempFilePath']],
+    param_nor: []
+}, {
+    name: 'getSavedFileList',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'getSavedFileInfo',
+    param_def: [['filePath']],
+    param_nor: []
+}, {
+    name: 'removeSavedFile',
+    param_def: [['filePath']],
+    param_nor: []
+}, {
+    name: 'openDocument',
+    param_def: [['filePath']],
+    param_nor: []
+}, {
+    // 数据缓存
+    name: 'setStorage',
+    param_def: [['key'], ['data', 'string|object']],
+    param_nor: []
+}, {
+    name: 'setStorageSync'
+}, {
+    name: 'getStorage',
+    param_def: [['key']],
+    param_nor: []
+}, {
+    name: 'getStorageSync'
+}, {
+    name: 'getStorageInfo',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'getStorageInfoSync'
+}, {
+    name: 'removeStorage',
+    param_def: [['key']],
+    param_nor: []
+}, {
+    name: 'removeStorageSync'
+}, {
+    name: 'clearStorage'
+}, {
+    name: 'clearStorageSync'
+}, {
+    // 位置信息
+    name: 'getLocation',
+    param_def: [['type']],
+    param_nor: []
+}, {
+    name: 'chooseLocation',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'openLocation',
+    param_def: [['latitude', 'number'], ['longitude', 'number']],
+    param_nor: [['scale', 'number'], ['name'], ['address']]
+}, {
+    // 设备信息
+    name: 'getSystemInfo',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'getSystemInfoSync'
+}, {
+    name: 'getNetworkType',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'onNetworkStatusChange'
+}, {
+    name: 'onAccelerometerChange'
+}, {
+    name: 'startAccelerometer',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'stopAccelerometer',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'onCompassChange'
+}, {
+    name: 'startCompass',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'stopCompass',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'makePhoneCall',
+    param_def: [['phoneNumber']],
+    param_nor: []
+}, {
+    name: 'scanCode',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'setClipboardData',
+    param_def: [['data']],
+    param_nor: []
+}, {
+    name: 'getClipboardData',
+    param_def: [],
+    param_nor: []
+}, {
+    // 蓝牙设置
+    name: 'openBluetoothAdapter',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'closeBluetoothAdapter',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'getBluetoothAdapterState',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'onBluetoothAdapterStateChange'
+}, {
+    name: 'startBluetoothDevicesDiscovery',
+    param_def: [['services', 'array']],
+    param_nor: []
+}, {
+    name: 'stopBluetoothDevicesDiscovery',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'getBluetoothDevices',
+    param_def: [['services', 'array']],
+    param_nor: []
+}, {
+    name: 'onBluetoothDeviceFound'
+}, {
+    name: 'createBLEConnection',
+    param_def: [['deviceId']],
+    param_nor: []
+}, {
+    name: 'closeBLEConnection',
+    param_def: [['deviceId']],
+    param_nor: []
+}, {
+    name: 'onBLEConnectionStateChanged'
+}, {
+    name: 'getBLEDeviceServices',
+    param_def: [['deviceId']],
+    param_nor: []
+}, {
+    name: 'getBLEDeviceCharacteristics',
+    param_def: [['deviceId'], ['serviceId']],
+    param_nor: []
+}, {
+    name: 'readBLECharacteristicValue',
+    param_def: [['deviceId'], ['serviceId'], ['characteristicId']],
+    param_nor: []
+}, {
+    name: 'writeBLECharacteristicValue',
+    param_def: [['deviceId'], ['serviceId'], ['characteristicId'], ['value', 'uint8array']],
+    param_nor: []
+}, {
+    name: 'notifyBLECharacteristicValueChanged',
+    param_def: [['deviceId'], ['serviceId'], ['characteristicId'], ['state', 'boolean']],
+    param_nor: []
+}, {
+    name: 'onBLECharacteristicValueChange'
+}, {
+    // 交互反馈
+    name: 'showToast',
+    param_def: [['title']],
+    param_nor: [['icon'], ['image'], ['duration', 'number'], ['mask', 'boolean']]
+}, {
+    name: 'showLoading',
+    param_def: [['title']],
+    param_nor: [['mask', 'boolean']]
+}, {
+    name: 'hideToast',
+    param_def: [['delay', 'number']],
+    // 使用param_call时，传入的参数将全部传入到该回调中
+    agent_call: function (wxMethod, options) {
+        setTimeout(function () {
+            delete options.delay;
+            wxMethod(options);
+        }, options.delay ? options.delay : 0);
+    }
+}, {
+    name: 'hideLoading',
+    param_def: [['delay', 'number']],
+    // 使用param_call时，传入的参数将全部传入到该回调中
+    agent_call: function (wxMethod, options) {
+        setTimeout(function () {
+            delete options.delay;
+            wxMethod(options);
+        }, options.delay ? options.delay : 0);
+    }
+}, {
+    name: 'showModal',
+    param_def: [['title'], ['content']],
+    param_nor: [['showCancel', 'boolean'], ['cancelText'], ['cancelColor'], ['confirmText'], ['confirmColor']]
+}, {
+    name: 'showActionSheet',
+    param_def: [['itemList']],
+    param_nor: [['itemColor']]
+}, {
+    // 设置导航条
+    name: 'setNavigationBarTitle',
+    param_def: [['title']],
+    param_nor: []
+}, {
+    name: 'showNavigationBarLoading'
+}, {
+    name: 'hideNavigationBarLoading'
+}, {
+    // 导航
+    name: 'navigateTo',
+    param_def: [['url']],
+    param_nor: []
+}, {
+    name: 'redirectTo',
+    param_def: [['url']],
+    param_nor: []
+}, {
+    name: 'switchTab',
+    param_def: [['url']],
+    param_nor: []
+}, {
+    name: 'navigateBack'
+}, {
+    // 下拉刷新
+    name: 'stopPullDownRefresh'
+}, {
+    // 登录
+    name: 'login',
+    param_def: [],
+    param_nor: []
+}, {
+    name: 'checkSession',
+    param_def: [],
+    param_nor: []
+}, {
+    // 获取用户信息
+    name: 'getUserInfo',
+    param_def: [['withCredentials', 'boolean']],
+    param_nor: []
+}, {
+    // 微信支付
+    name: 'requestPayment',
+    param_def: [['timeStamp'], ['nonceStr'], ['package'], ['signType'], ['paySign']],
+    param_nor: []
+}, {
+    // 收货地址
+    name: 'chooseAddress',
+    param_def: [],
+    param_nor: []
+}, {
+    // 卡券
+    name: 'addCard',
+    param_def: [['cardList', 'array']],
+    param_nor: []
+}, {
+    name: 'openCard',
+    param_def: [['cardList', 'array']],
+    param_nor: []
+}, {
+    // 设置
+    name: 'openSetting',
+    param_def: [],
+    param_nor: []
+}, {
+    // Buffer操作
+    name: 'base64ToArrayBuffer'
+}, {
+    name: 'arrayBufferToBase64'
+}];
+
+// **Github:** https://github.com/teambition/then.js
+//
+// **License:** MIT
+const Thenjs = (function () {
+    let maxTickDepth = 100
+    let toString = Object.prototype.toString
+    let hasOwnProperty = Object.prototype.hasOwnProperty
+    let nextTick = typeof setImmediate === 'function' ? setImmediate : function (fn) {
+        setTimeout(fn, 0)
+    }
+    let isArray = Array.isArray || function (obj) {
+        return toString.call(obj) === '[object Array]'
+    }
+
+    // 将 `arguments` 转成数组，效率比 `[].slice.call` 高很多
+    function slice(args, start) {
+        start = start || 0
+        if (start >= args.length) return []
+        let len = args.length
+        let ret = Array(len - start)
+        while (len-- > start) ret[len - start] = args[len]
+        return ret
+    }
+
+    function map(array, iterator) {
+        let res = []
+        for (let i = 0, len = array.length; i < len; i++) res.push(iterator(array[i], i, array))
+        return res
+    }
+
+    // 同步执行函数，同时捕捉异常
+    function carry(errorHandler, fn) {
+        try {
+            fn.apply(null, slice(arguments, 2))
+        } catch (error) {
+            errorHandler(error)
+        }
+    }
+
+    // 异步执行函数，同时捕捉异常
+    function defer(errorHandler, fn) {
+        let args = arguments
+        nextTick(function () {
+            carry.apply(null, args)
+        })
+    }
+
+    function toThunk(object) {
+        if (object == null) return object
+        if (typeof object.toThunk === 'function') return object.toThunk()
+        if (typeof object.then === 'function') {
+            return function (callback) {
+                object.then(function (res) {
+                    callback(null, res)
+                }, callback)
+            }
+        } else return object
+    }
+
+    function arrayToTasks(array, iterator) {
+        return map(array, function (value, index, list) {
+            return function (done) {
+                iterator(done, value, index, list)
+            }
+        })
+    }
+
+    // ## **Thenjs** 主函数
+    function Thenjs(start, debug) {
+        let self = this
+        let cont
+        if (start instanceof Thenjs) return start
+        if (!(self instanceof Thenjs)) return new Thenjs(start, debug)
+        self._chain = 0
+        self._success = self._parallel = self._series = null
+        self._finally = self._error = self._result = self._nextThen = null
+        if (!arguments.length) return self
+
+        cont = genContinuation(self, debug)
+        start = toThunk(start)
+        if (start === void 0) cont()
+        else if (typeof start === 'function') defer(cont, start, cont)
+        else cont(null, start)
+    }
+
+    Thenjs.defer = defer
+
+    Thenjs.parallel = function (tasks, debug) {
+        return new Thenjs(function (cont) {
+            carry(cont, parallel, cont, tasks)
+        }, debug)
+    }
+
+    Thenjs.series = function (tasks, debug) {
+        return new Thenjs(function (cont) {
+            carry(cont, series, cont, tasks)
+        }, debug)
+    }
+
+    Thenjs.each = function (array, iterator, debug) {
+        return new Thenjs(function (cont) {
+            carry(cont, parallel, cont, arrayToTasks(array, iterator))
+        }, debug)
+    }
+
+    Thenjs.eachSeries = function (array, iterator, debug) {
+        return new Thenjs(function (cont) {
+            carry(cont, series, cont, arrayToTasks(array, iterator))
+        }, debug)
+    }
+
+    Thenjs.parallelLimit = function (tasks, limit, debug) {
+        return new Thenjs(function (cont) {
+            parallelLimit(cont, tasks, limit)
+        }, debug)
+    }
+
+    Thenjs.eachLimit = function (array, iterator, limit, debug) {
+        return new Thenjs(function (cont) {
+            parallelLimit(cont, arrayToTasks(array, iterator), limit)
+        }, debug)
+    }
+
+    Thenjs.nextTick = function (fn) {
+        let args = slice(arguments, 1)
+        nextTick(function () {
+            fn.apply(null, args)
+        })
+    }
+
+    // 全局 error 监听
+    Thenjs.onerror = function (error) {
+        console.error('Thenjs caught error: ', error)
+        throw error
+    }
+
+    let proto = Thenjs.prototype
+    // **Thenjs** 对象上的 **finally** 方法
+    proto.fin = proto['finally'] = function (finallyHandler) {
+        return thenFactory(function (cont, self) {
+            self._finally = wrapTaskHandler(cont, finallyHandler)
+        }, this)
+    }
+
+    // **Thenjs** 对象上的 **then** 方法
+    proto.then = function (successHandler, errorHandler) {
+        return thenFactory(function (cont, self) {
+            if (successHandler) self._success = wrapTaskHandler(cont, successHandler)
+            if (errorHandler) self._error = wrapTaskHandler(cont, errorHandler)
+        }, this)
+    }
+
+    // **Thenjs** 对象上的 **fail** 方法
+    proto.fail = proto['catch'] = function (errorHandler) {
+        return thenFactory(function (cont, self) {
+            self._error = wrapTaskHandler(cont, errorHandler)
+            // 对于链上的 fail 方法，如果无 error ，则穿透该链，将结果输入下一链
+            self._success = function () {
+                let args = slice(arguments)
+                args.unshift(null)
+                cont.apply(null, args)
+            }
+        }, this)
+    }
+
+    // **Thenjs** 对象上的 **parallel** 方法
+    proto.parallel = function (tasks) {
+        return thenFactory(function (cont, self) {
+            self._parallel = function (_tasks) {
+                parallel(cont, tasks || _tasks)
+            }
+        }, this)
+    }
+
+    // **Thenjs** 对象上的 **series** 方法
+    proto.series = function (tasks) {
+        return thenFactory(function (cont, self) {
+            self._series = function (_tasks) {
+                series(cont, tasks || _tasks)
+            }
+        }, this)
+    }
+
+    // **Thenjs** 对象上的 **each** 方法
+    proto.each = function (array, iterator) {
+        return thenFactory(function (cont, self) {
+            self._parallel = function (_array, _iterator) {
+                // 优先使用定义的参数，如果没有定义参数，则从上一链结果从获取
+                // `_array`, `_iterator` 来自于上一链的 **cont**，下同
+                parallel(cont, arrayToTasks(array || _array, iterator || _iterator))
+            }
+        }, this)
+    }
+
+    // **Thenjs** 对象上的 **eachSeries** 方法
+    proto.eachSeries = function (array, iterator) {
+        return thenFactory(function (cont, self) {
+            self._series = function (_array, _iterator) {
+                series(cont, arrayToTasks(array || _array, iterator || _iterator))
+            }
+        }, this)
+    }
+
+    // **Thenjs** 对象上的 **parallelLimit** 方法
+    proto.parallelLimit = function (tasks, limit) {
+        return thenFactory(function (cont, self) {
+            self._parallel = function (_tasks) {
+                parallelLimit(cont, tasks || _tasks, limit)
+            }
+        }, this)
+    }
+
+    // **Thenjs** 对象上的 **eachLimit** 方法
+    proto.eachLimit = function (array, iterator, limit) {
+        return thenFactory(function (cont, self) {
+            self._series = function (_array, _iterator) {
+                parallelLimit(cont, arrayToTasks(array || _array, iterator || _iterator), limit)
+            }
+        }, this)
+    }
+
+    // **Thenjs** 对象上的 **toThunk** 方法
+    proto.toThunk = function () {
+        let self = this
+        return function (callback) {
+            if (self._result) {
+                callback.apply(null, self._result)
+                self._result = false
+            } else if (self._result !== false) {
+                self._finally = self._error = callback
+            }
+        }
+    }
+
+    // util.inspect() implementation
+    proto.inspect = function () {
+        let obj = {}
+        for (let key in this) {
+            if (!hasOwnProperty.call(this, key)) continue
+            obj[key] = key === '_nextThen' ? (this[key] && this[key]._chain) : this[key]
+        }
+        return obj
+    }
+
+    // 核心 **continuation** 方法
+    // **continuation** 收集任务结果，触发下一个链，它被注入各个 handler
+    // 其参数采用 **node.js** 的 **callback** 形式：(error, arg1, arg2, ...)
+    function continuation() {
+        let self = this
+        let args = slice(arguments)
+
+        // then链上的结果已经处理，若重复执行 cont 则直接跳过；
+        if (self._result === false) return
+        // 第一次进入 continuation，若为 debug 模式则执行，对于同一结果保证 debug 只执行一次；
+        if (!self._result && self._chain) {
+            self.debug.apply(self, ['\nChain ' + self._chain + ': '].concat(slice(args)))
+        }
+        // 标记已进入 continuation 处理
+        self._result = false
+
+        carry(function (err) {
+            if (err === args[0]) continuationError(self, err)
+            else continuation.call(self._nextThen, err)
+        }, continuationExec, self, args)
+    }
+
+    function continuationExec(ctx, args) {
+        if (args[0] == null) args[0] = null
+        else {
+            args = [args[0]]
+            if (!ctx._finally) throw args[0]
+        }
+        if (ctx._finally) return ctx._finally.apply(null, args)
+        let success = ctx._success || ctx._parallel || ctx._series
+        if (success) return success.apply(null, slice(args, 1))
+        // 对于正确结果，**Thenjs** 链上没有相应 handler 处理，则在 **Thenjs** 链上保存结果，等待下一次处理。
+        ctx._result = args
+    }
+
+    function continuationError(ctx, err) {
+        let _nextThen = ctx
+        let errorHandler = ctx._error || ctx._finally
+
+        // 获取后链的 error handler
+        while (!errorHandler && _nextThen._nextThen) {
+            _nextThen = _nextThen._nextThen
+            errorHandler = _nextThen._error || _nextThen._finally
+        }
+
+        if (errorHandler) {
+            return carry(function (_err) {
+                // errorHandler 存在则 _nextThen._nextThen 必然存在
+                continuation.call(_nextThen._nextThen, _err)
+            }, errorHandler, err)
+        }
+        // 如果定义了全局 **onerror**，则用它处理
+        if (Thenjs.onerror) return Thenjs.onerror(err)
+        // 对于 error，如果没有任何 handler 处理，则保存到链上最后一个 **Thenjs** 对象，等待下一次处理。
+        while (_nextThen._nextThen) _nextThen = _nextThen._nextThen
+        _nextThen._result = [err]
+    }
+
+    function genContinuation(ctx, debug) {
+        function cont() {
+            return continuation.apply(ctx, arguments)
+        }
+        // 标记 cont，cont 作为 handler 时不会被注入 cont，见 `wrapTaskHandler`
+        cont._isCont = true
+        // 设置并开启 debug 模式
+        if (debug) {
+            proto.debug = typeof debug === 'function' ? debug : defaultDebug
+            ctx._chain = 1
+        }
+        return cont
+    }
+
+    // 注入 cont，执行 fn，并返回新的 **Thenjs** 对象
+    function thenFactory(fn, ctx, debug) {
+        let nextThen = new Thenjs()
+        let cont = genContinuation(nextThen, debug)
+
+        // 注入 cont，初始化 handler
+        fn(cont, ctx)
+        if (!ctx) return nextThen
+        ctx._nextThen = nextThen
+        if (ctx._chain) nextThen._chain = ctx._chain + 1
+        // 检查上一链的结果是否处理，未处理则处理，用于续接 **Thenjs** 链
+        if (ctx._result) {
+            nextTick(function () {
+                continuation.apply(ctx, ctx._result)
+            })
+        }
+        return nextThen
+    }
+
+    // 封装 handler，`_isCont` 判定 handler 是不是 `cont` ，不是则将 `cont` 注入成第一个参数
+    function wrapTaskHandler(cont, handler) {
+        return handler._isCont ? handler : function () {
+            let args = slice(arguments)
+            args.unshift(cont)
+            handler.apply(null, args)
+        }
+    }
+
+    // ## **parallel** 函数
+    // 并行执行一组 `task` 任务，`cont` 处理最后结果
+    function parallel(cont, tasks) {
+        if (!isArray(tasks)) return cont(errorify(tasks, 'parallel'))
+        let pending = tasks.length
+        let result = []
+
+        if (pending <= 0) return cont(null, result)
+        for (let i = 0, len = pending; i < len; i++) tasks[i](genNext(i))
+
+        function genNext(index) {
+            function next(error, value) {
+                if (pending <= 0) return
+                if (error != null) {
+                    pending = 0
+                    cont(error)
+                } else {
+                    result[index] = value
+                    return !--pending && cont(null, result)
+                }
+            }
+            next._isCont = true
+            return next
+        }
+    }
+
+    // ## **series** 函数
+    // 串行执行一组 `array` 任务，`cont` 处理最后结果
+    function series(cont, tasks) {
+        if (!isArray(tasks)) return cont(errorify(tasks, 'series'))
+        let i = 0
+        let end = tasks.length - 1
+        let run
+        let result = []
+        let stack = maxTickDepth
+
+        if (end < 0) return cont(null, result)
+        next._isCont = true
+        tasks[0](next)
+
+        function next(error, value) {
+            if (error != null) return cont(error)
+            result[i] = value
+            if (++i > end) return cont(null, result)
+            // 先同步执行，嵌套达到 maxTickDepth 时转成一次异步执行
+            run = --stack > 0 ? carry : (stack = maxTickDepth, defer)
+            run(cont, tasks[i], next)
+        }
+    }
+
+    function parallelLimit(cont, tasks, limit) {
+        let index = 0
+        let pending = 0
+        let len = tasks.length
+        let queue = []
+        let finished = false
+
+        limit = limit >= 1 ? Math.floor(limit) : Number.MAX_VALUE
+        // eslint-disable-next-line
+        do { checkNext() } while (index < len && pending < limit)
+
+        function checkNext() {
+            if (finished) return
+            if (index >= len) {
+                finished = true
+                return parallel(cont, queue)
+            }
+            if (pending >= limit) return
+            pending++
+            queue.push(evalTask())
+        }
+
+        function evalTask() {
+            return new Thenjs(tasks[index++]).fin(function (next, err, res) {
+                if (err != null) {
+                    finished = true
+                    return cont(err)
+                }
+                pending--
+                checkNext()
+                next(null, res)
+            }).toThunk()
+        }
+    }
+
+    // 默认的 `debug` 方法
+    function defaultDebug() {
+        console.log.apply(console, arguments)
+    }
+
+    // 参数不合法时生成相应的错误
+    function errorify(obj, method) {
+        return new Error('The argument ' + (obj && obj.toString()) + ' in "' + method + '" is not Array!')
+    }
+
+    Thenjs.NAME = 'Thenjs'
+    Thenjs.VERSION = '2.0.3'
+    return Thenjs
+})();
+// 检测是否空对象
 const isEmptyObject = function (obj) {
     let name;
     for (name in obj) {
@@ -314,6 +1129,7 @@ const $csscontrol = {
     addClass: addClass,
     removeClass: removeClass
 };
+
 const $getSystemInfo = function (targetObj) {
     let sys, res = {};
     try {
@@ -415,9 +1231,10 @@ let getSystemInfo = function (targetObj) {
     return res;
 }
 getSystemInfo($windowInfo);
-// Events across the pages
+// Events across the page
 const $globalEvents = {
     __events__: {},
+    // 分离需要执行的和不被执行的
     classifyFilter(filter, _negative, _positive) {
         if (filter instanceof Array) {
             filter.forEach((f) => {
@@ -462,7 +1279,11 @@ const $globalEvents = {
                 _perm = true
             }
             if (_perm && pg in this.__events__ && ename in this.__events__[pg]) {
-                this.__events__[pg][ename]({
+                // 如果data为函数则派发到回调的第一个参数
+                typeof data === 'function' ? this.__events__[pg][ename](data, {
+                    from: pname,
+                    data: undefined
+                }) : this.__events__[pg][ename]({
                     from: pname,
                     data: data
                 });
@@ -543,7 +1364,7 @@ let wxAsyncApiHandler = function (context) {
 }
 
 // 方法主体
-let rootMinQuery = function (pageName, recoveryMode) {
+const rootMinQuery = function (pageName, recoveryMode) {
     // 检测pageName是否为字符串
     if (!typeof pageName === "string") {
         console.error(`MinQuery initialization require's a pageName, such as: app/pageNameOne;`);
@@ -1021,10 +1842,12 @@ let rootMinQuery = function (pageName, recoveryMode) {
             return fmt;
         },
         // 当前时间戳
-        now: Date.now
+        now: Date.now,
+        // Thenjs
+        Thenjs: Thenjs
     });
     // 生成类型字典
-    MinQuery.each("Boolean Number String Function Array Date RegExp Object Error".split(" "), function (i, name) {
+    MinQuery.each("Boolean Number String Function Array Date RegExp Object Error Uint8Array".split(" "), function (i, name) {
         class2type["[object " + name + "]"] = name.toLowerCase();
     });
 
@@ -1044,181 +1867,281 @@ let rootMinQuery = function (pageName, recoveryMode) {
             method: "get",
             dataType: "json"
         }
-        if (MinQuery.isPlainObject(_conf)) MinQuery.extend(options, _conf);
+        if (MinQuery.isPlainObject(_conf)) MinQuery.extend(true, options, _conf);
         else if (MinQuery.isString(_conf)) options.url = _conf;
         let _fail = options.fail, _success = options.success, _complete = options.complete;
         MinQuery.extend(options, {
-            fail(e) { asyncHandler.trigger("wxRequest", "fail", e); MinQuery.isFunction(_fail) && _fail(e) },
-            success(e) { asyncHandler.trigger("wxRequest", "success", e); MinQuery.isFunction(_success) && _success(e) },
-            complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger("wxRequest", "complete", e); MinQuery.isFunction(_complete) && _complete(e); }
+            fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e); MinQuery.isFunction(_fail) && _fail(e) },
+            success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e); MinQuery.isFunction(_success) && _success(e) },
+            complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e); MinQuery.isFunction(_complete) && _complete(e); }
         })
         // 将method值转大写
         options.method = options.method.toUpperCase();
         wx.request(options);
         // 错误方法
-        return asyncHandler.register("wxRequest");
+        return asyncHandler.register("request");
     }
+    const wxCalls = "fail,success,complete,cancel".split(",");
+    const wxMethodsCallbackGenerate = function (methodName, options, wrapperCall, context) {
+        !context && (context = wx);
+        if (MinQuery.isString(methodName) && methodName in context) {
+            !options && (options = {});
+            let _backup = {};
+            MinQuery.each(options, (k, f) => {
+                if (wxCalls.indexOf(k) !== -1 && MinQuery.isFunction(f)) {
+                    _backup[k] = f;
+                    delete options[k];
+                }
+            })
+            let _continue_func;
+            MinQuery.extend(options, {
+                fail(e) {
+                    // 运行外部分离的场景处理函数
+                    'fail' in _backup && _backup['fail'](e);
+                },
+                success(e) {
+                    'success' in _backup && _backup['success'](e);
+                },
+                complete(e) {
+                    'complete' in _backup && _backup['complete'](e);
+                    // 支持Then.js的链式反应链
+                    let _msg = e.errMsg.split(":"), _err = null, _data;
+                    if (_msg[1] === "ok") {
+                        delete e.errMsg;
+                        _data = e;
+                    } else {
+                        _err = e;
+                    }
+                    MinQuery.isFunction(_continue_func) && _continue_func(_err, _data);
+                },
+                cancel(e) {
+                    'cancel' in _backup && _backup['cancel'](e);
+                }
+            });
+            MinQuery.isFunction(wrapperCall) 
+                ? wrapperCall(methodName, options) 
+                : (MinQuery.type(options) == 'array' ? context[methodName].apply(null,options) : context[methodName].call(null,options));
+            // 支持then.js
+            const _suport_then = function (cont) {
+                _continue_func = cont;
+            }
+            // 属性方法用于方法的链式调用
+            MinQuery.each(wxCalls, (i, m) => {
+                _suport_then[m] = (function (_m) {
+                    return function (cb) {
+                        MinQuery.isFunction(cb) && (_backup[_m] = cb);
+                        return this;
+                    }
+                })(m)
+            });
+            return _suport_then;
+        }
+    }
+    let exmp = {
+        name: 'hideToast',
+        param_def: [['delay', 'number']],
+        param_nor: [['mask', 'boolean']],
+        // 使用param_call时，传入的参数将全部传入到该回调中
+        agent_call: function (wxMethod, options) {
+            setTimeout(function () {
+                delete options.delay;
+                wxMethod(options);
+            }, options.delay ? options.delay : 0);
+        }
+    };
+    const registerWxMethods = function () {
+        var _wxMethodsTmp = {};
+        MinQuery.each(wxMethodsParamsConfig, function (i, _oj) {
+            if (_oj.name) {
+                _wxMethodsTmp[_oj.name] = (function (_inob) {
+                    var _param_def = _inob['param_def'], _param_nor = _inob['param_nor'], _param_all, options = {};
+                    if (MinQuery.isArray(_param_def)) {
+                        _param_all = MinQuery.isArray(_param_nor) ? _param_def.concat(_param_nor) : _param_def;
+                    } else _param_all = null;
+                    return function () {
+                        var args = slice.call(arguments), _last = args.pop(), _type = 'string';
+                        if (!MinQuery.isPlainObject(_last)) {args.push(_last);_last = null};
+                        if(args[0] && MinQuery.type(args[0]) === 'function'){
+                            options = args[0];
+                        }else if (!!_param_all) {
+                            if (_param_all.length > 0) {
+                                MinQuery.each(args, function (_i, ar) {
+                                    _type = !!_param_all[_i][1] ? _param_all[_i][1] : 'string';
+                                    if (MinQuery.type(ar) === _type) {
+                                        options[_param_all[_i][0]] = ar;
+                                    } else {
+                                        console.error(`${_inob.name} method's param ${_param_all[_i][0]}`)
+                                    }
+                                });
+                            }
+                            !!_last && MinQuery.extend(options,_last);
+                        } else {
+                            options = args;
+                        }
+                        console.log(_inob.name,options, _inob['agent_call']);
+                        return wxMethodsCallbackGenerate(_inob.name, options, _inob['agent_call']);
+                    }
+                })(_oj);
+            }
+        });
+        MinQuery.extend(_wxMethodsTmp);
+    }
+
+    registerWxMethods();
+
+
     MinQuery.extend({
         $window: $windowInfo,
-        // scanCode
-        scan(call) {
-            wx.scanCode({
-                phoneNumber: phone,
-                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-            });
-            return asyncHandler.register("scanCode");
-        },
-        // makePhoneCall
-        phoneCall(phone, call) {
-            wx.makePhoneCall({
-                phoneNumber: phone,
-                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-            });
-            return asyncHandler.register("makePhoneCall");
-        },
-        // showToast
-        showToast(title, icon, delay, mask, call) {
-            let icons = {
-                loading: "loading",
-                success: "success"
-            }
-            if (MinQuery.isString(title)) {
-                console.error("The toast title param must be a string!");
-                return "";
-            } else if (typeof icon === "boolean") {
-                mask = icon;
-                icon = null;
-            } else if (typeof delay === "boolean") {
-                mask = delay;
-                delay = null;
-                if (!icons[icon]) {
-                    console.error(`Wx do not suport icon type of [${icon}]!`);
-                    return;
-                }
-            }
-            wx.showToast({
-                title: title,
-                icon: icon ? icon : '',
-                duration: delay ? delay : 2000,
-                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-            });
-            return asyncHandler.register("showToast")
-        },
-        // hideToast
-        hideToast(delay) {
-            MinQuery.timeOut(wx.hideToast, delay ? delay : 0, true);
-        },
-        // showActionSheet
-        actionSheet(items, color, call) {
-            if (!items instanceof Array) {
-                console.error("showActionSheet items must be an Array instance!");
-                return;
-            }
-            wx.showActionSheet({
-                itemList: items,
-                itemColor: color ? color : "",
-                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-            });
-            return asyncHandler.register("showActionSheet")
-        },
-        showActionSheet: MinQuery.actionSheet,
-        // showModal
-        modal(title, content, config, call) {
-            if ((MinQuery.isString(title) && !MinQuery.isEmpty(title)) || MinQuery.isString(content)) {
-                console.error("The Modal title and content type must be string!", title, content);
-                return;
-            }
-            let options = {
-                showCancel: true,
-                cancelText: "取消",
-                cancelColor: "#000000",
-                confirmText: "确定",
-                confirmColor: "#3CC51F"
-            }
-            if (config instanceof Object) {
-                MinQuery.extend(options, config);
-            }
-            wx.showModal({
-                title: title,
-                content: '这是一个模态弹窗',
-                showCancel: options.showCancel,
-                cancelText: options.cancelText,
-                cancelColor: options.cancelColor,
-                confirmText: options.confirmText,
-                confirmColor: options.confirmText,
-                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-            });
-            return asyncHandler.register("showModal");
-        },
-        showModal: MinQuery.modal,
-        // setNavigationBarTitle
-        navTitle(title, call) {
-            if (MinQuery.isEmpty(title)) {
-                console.error("setNavigationBar title must be an non-empty string！")
-                return;
-            }
-            wx.setNavigationBarTitle({
-                title: title,
-                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-            })
-            return asyncHandler.register("setNavigationBarTitle");
-        },
-        setNavigationBarTitle: MinQuery.navTitle,
-        // NavigationBarLoading
-        navLoading: {
-            show() {
-                wx.showNavigationBarLoading();
-            },
-            hide() {
-                wx.hideNavigationBarLoading()
-            }
-        },
-        NavigationBarLoading: MinQuery.navLoading,
-        // Navigations
-        navigateTo(url, call) {
-            wx.navigateTo({
-                url: url,
-                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-            });
-            return asyncHandler.register("navigateTo");
-        },
-        redirectTo(url, call) {
-            wx.redirectTo({
-                url: url,
-                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-            });
-            return asyncHandler.register("redirectTo");
-        },
-        switchTab(url, call) {
-            wx.switchTab({
-                url: url,
-                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-            });
-            return asyncHandler.register("switchTab");
-        },
-        navigateBack(pageNum) {
-            wx.navigateBack({
-                delta: pageNum
-            })
-        },
+
+        // // scanCode
+        // scanCode(call) {
+        //     return wxMethodsCallbackGenerate("scanCode");
+        // },
+        // // makePhoneCall
+        // makePhoneCall(phone, call) {
+        //     return wxMethodsCallbackGenerate("makePhoneCall", MinQuery.isPlainObject(phone) ? phone : {
+        //         phoneNumber: phone
+        //     });
+        // },
+        // // showToast
+        // showToast(title, icon, delay, mask, call) {
+        //     let icons = {
+        //         loading: "loading",
+        //         success: "success"
+        //     }
+        //     if (MinQuery.isString(title)) {
+        //         console.error("The toast title param must be a string!");
+        //         return "";
+        //     } else if (typeof icon === "boolean") {
+        //         mask = icon;
+        //         icon = null;
+        //     } else if (typeof delay === "boolean") {
+        //         mask = delay;
+        //         delay = null;
+        //         if (!icons[icon]) {
+        //             console.error(`Wx do not suport icon type of [${icon}]!`);
+        //             return;
+        //         }
+        //     }
+        //     wx.showToast({
+        //         title: title,
+        //         icon: icon ? icon : '',
+        //         duration: delay ? delay : 2000,
+        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
+        //     });
+        //     return asyncHandler.register("showToast")
+        // },
+        // // hideToast
+        // hideToast(delay) {
+        //     MinQuery.timeOut(wx.hideToast, delay ? delay : 0, true);
+        // },
+        // // showActionSheet
+        // actionSheet(items, color, call) {
+        //     if (!items instanceof Array) {
+        //         console.error("showActionSheet items must be an Array instance!");
+        //         return;
+        //     }
+        //     wx.showActionSheet({
+        //         itemList: items,
+        //         itemColor: color ? color : "",
+        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
+        //     });
+        //     return asyncHandler.register("showActionSheet")
+        // },
+        // showActionSheet: MinQuery.actionSheet,
+        // // showModal
+        // modal(title, content, config, call) {
+        //     if ((MinQuery.isString(title) && !MinQuery.isEmpty(title)) || MinQuery.isString(content)) {
+        //         console.error("The Modal title and content type must be string!", title, content);
+        //         return;
+        //     }
+        //     let options = {
+        //         showCancel: true,
+        //         cancelText: "取消",
+        //         cancelColor: "#000000",
+        //         confirmText: "确定",
+        //         confirmColor: "#3CC51F"
+        //     }
+        //     if (config instanceof Object) {
+        //         MinQuery.extend(options, config);
+        //     }
+        //     wx.showModal({
+        //         title: title,
+        //         content: content,
+        //         showCancel: options.showCancel,
+        //         cancelText: options.cancelText,
+        //         cancelColor: options.cancelColor,
+        //         confirmText: options.confirmText,
+        //         confirmColor: options.confirmText,
+        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
+        //     });
+        //     return asyncHandler.register("showModal");
+        // },
+        // showModal: MinQuery.modal,
+        // // setNavigationBarTitle
+        // navTitle(title, call) {
+        //     if (MinQuery.isEmpty(title)) {
+        //         console.error("setNavigationBar title must be an non-empty string！")
+        //         return;
+        //     }
+        //     wx.setNavigationBarTitle({
+        //         title: title,
+        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
+        //     })
+        //     return asyncHandler.register("setNavigationBarTitle");
+        // },
+        // setNavigationBarTitle: MinQuery.navTitle,
+        // // NavigationBarLoading
+        // navLoading: {
+        //     show() {
+        //         wx.showNavigationBarLoading();
+        //     },
+        //     hide() {
+        //         wx.hideNavigationBarLoading()
+        //     }
+        // },
+        // NavigationBarLoading: MinQuery.navLoading,
+        // // Navigations
+        // navigateTo(url, call) {
+        //     wx.navigateTo({
+        //         url: url,
+        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
+        //     });
+        //     return asyncHandler.register("navigateTo");
+        // },
+        // redirectTo(url, call) {
+        //     wx.redirectTo({
+        //         url: url,
+        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
+        //     });
+        //     return asyncHandler.register("redirectTo");
+        // },
+        // switchTab(url, call) {
+        //     wx.switchTab({
+        //         url: url,
+        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
+        //     });
+        //     return asyncHandler.register("switchTab");
+        // },
+        // navigateBack(pageNum) {
+        //     wx.navigateBack({
+        //         delta: pageNum
+        //     })
+        // },
 
         // Ajax methods
         ajax(config, data, call) {
@@ -1252,34 +2175,34 @@ let rootMinQuery = function (pageName, recoveryMode) {
                 success(e) { call && call(e); }
             })
         },
-        // 录音控制
-        startRecord(call) {
-            wx.startRecord({
-                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-            })
-            return asyncHandler.register("startRecord");
-        },
-        stopRecord(delay) {
-            MinQuery.timeOut(wx.stopRecord, delay ? delay : 0, true);
-        },
-        // 录音播放
-        playVoice(filePath, call) {
-            wx.playVoice({
-                filePath: filePath,
-                fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-                success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-                complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-            })
-            return asyncHandler.register("playVoice");
-        },
-        pauseVoice(delay) {
-            MinQuery.timeOut(wx.pauseVoice, delay ? delay : 0, true);
-        },
-        stopVoice(delay) {
-            MinQuery.timeOut(wx.stopVoice, delay ? delay : 0, true);
-        }
+        // // 录音控制
+        // startRecord(call) {
+        //     wx.startRecord({
+        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
+        //     })
+        //     return asyncHandler.register("startRecord");
+        // },
+        // stopRecord(delay) {
+        //     MinQuery.timeOut(wx.stopRecord, delay ? delay : 0, true);
+        // },
+        // // 录音播放
+        // playVoice(filePath, call) {
+        //     wx.playVoice({
+        //         filePath: filePath,
+        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
+        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
+        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
+        //     })
+        //     return asyncHandler.register("playVoice");
+        // },
+        // pauseVoice(delay) {
+        //     MinQuery.timeOut(wx.pauseVoice, delay ? delay : 0, true);
+        // },
+        // stopVoice(delay) {
+        //     MinQuery.timeOut(wx.stopVoice, delay ? delay : 0, true);
+        // }
     });
 
     // Query Engine
@@ -1304,7 +2227,7 @@ let rootMinQuery = function (pageName, recoveryMode) {
     // 全局接口，获取每一个运行中的页面、获取app数据
     let appData;
     MinQuery.extend({
-        pages(pageName) {
+        page(pageName) {
             return $pageLoadedInstances.get(pageName);
         },
         app(searchkeys) {
@@ -1313,12 +2236,26 @@ let rootMinQuery = function (pageName, recoveryMode) {
         }
     })
     /**
+     * current  apply & call
+     */
+    MinQuery.extend({
+        $apply(_tar, argsArr) {
+            MinQuery.isFunction(_tar) && _tar.apply(this, argsArr);
+        },
+        $call() {
+            let args = slice.call(arguments), _tar = args[0];
+            args.shift();
+            MinQuery.isFunction(_tar) && _tar.apply(this, args);
+        }
+    })
+
+    /**
      * 跨页面数据传输事件注册及触发
      */
     MinQuery.extend({
         // 绑定某个事件的处理方法，每个事件支持绑定多个处理方法，每个方法附带自己的与设置数据
         $on(event, callback) {
-            $globalEvents.register(MinQuery.pageName, event, callback);
+            $globalEvents.register(MinQuery.pageName, event, callback.bind(this));
         },
         // 事件传播，及附带数据，并在分发完成后执行Callback
         $off(event, filterArr) {
@@ -2349,12 +3286,41 @@ let rootMinQuery = function (pageName, recoveryMode) {
                 return this;
             else return cobj;
         },
-        vedio() {
+        video() {
             let i = 0, len = this.length, ele, cobj = {};
             for (; i < len;) {
                 ele = this[i++];
                 let vid = ele.$selectorName,
-                    context = MinQuery.vedio.call(ele, vid);
+                    context = MinQuery.video.call(ele, vid);
+                // 每次均返回context上下文，便于自定义使用外部方法进行画布的编辑工作
+                if (len > 1) cobj[ele.$selectorName] = context;
+                else return context;
+            }
+            if (MinQuery.isEmptyObject(cobj))
+                return this;
+            else return cobj;
+        },
+        audio(src) {
+            let i = 0, len = this.length, ele, cobj = {};
+            for (; i < len;) {
+                ele = this[i++];
+                let vid = ele.$selectorName,
+                    context = MinQuery.audio.call(ele, vid);
+                MinQuery.isString(src) && context.setSrc(src);
+                // 每次均返回context上下文，便于自定义使用外部方法进行画布的编辑工作
+                if (len > 1) cobj[ele.$selectorName] = context;
+                else return context;
+            }
+            if (MinQuery.isEmptyObject(cobj))
+                return this;
+            else return cobj;
+        },
+        Map() {
+            let i = 0, len = this.length, ele, cobj = {};
+            for (; i < len;) {
+                ele = this[i++];
+                let vid = ele.$selectorName,
+                    context = MinQuery.Map.call(ele, vid);
                 // 每次均返回context上下文，便于自定义使用外部方法进行画布的编辑工作
                 if (len > 1) cobj[ele.$selectorName] = context;
                 else return context;
@@ -2375,8 +3341,8 @@ let rootMinQuery = function (pageName, recoveryMode) {
             }
             return current_context;
         },
-        vedio(vedioId) {
-            var context = elem_priv.get(this, "$vedio-context", wx.createVideoContext(vedioId));
+        video(videoId) {
+            let context = elem_priv.get(this, "$video-context", wx.createVideoContext(videoId));
             return {
                 play: context.play,
                 pause: context.pause,
@@ -2389,6 +3355,23 @@ let rootMinQuery = function (pageName, recoveryMode) {
                 }
             }
         },
+        audio(audioId) {
+            let context = elem_priv.get(this, "$audio-context", wx.createAudioContext(audioId));
+            return {
+                play: context.play,
+                pause: context.pause,
+                seek: context.seek,
+                start: context.seek(0),
+                setSrc: context.setSrc
+            }
+        },
+        Map(mapId) {
+            let context = elem_priv.get(this, "$Map-context", wx.createMapContext(mapId));
+            return {
+                pgetCenterLocationlay: context.getCenterLocation,
+                moveToLocation: context.moveToLocation
+            }
+        },
         randomColor() {
             let rgb = [], i = 0;
             for (; i < 3; ++i) {
@@ -2399,6 +3382,8 @@ let rootMinQuery = function (pageName, recoveryMode) {
             return '#' + rgb.join('')
         }
     })
+    // 用于存储当前页面所设置的数据hook对象，防止二次设置
+    let ___dataHooks__ = {};
     // 设置数据[keyString'设置查询的字符串'，keyValue'设置值']
     /**
      * stayFormat Boolean 用于标识单个数据设置时，是否保留对象状态，而非返回当前当个hook
@@ -2410,7 +3395,8 @@ let rootMinQuery = function (pageName, recoveryMode) {
             __length__: 0,
             __paths__: []
         }, k, ka, ik, fk, oldValue;
-        if (MinQuery.isString(keyString) && !!keyValue) {
+        // if (MinQuery.isString(keyString) && !!keyValue) {
+        if (MinQuery.isString(keyString)) {
             keyString = {
                 [keyString]: keyValue
             }
@@ -2438,7 +3424,8 @@ let rootMinQuery = function (pageName, recoveryMode) {
             if (oldValue === keyString[k]) delete keyString[k];
             // 获取操作key的最后一位，作为当前返回操作的标识
             fk = ka[ka.length - 1];
-            returns[fk] = {
+            // 设置returns的同时挂载到dataHook上；
+            ___dataHooks__[ka] = returns[fk] = {
                 // 操作hook的目标查询路径
                 __path__: k,
                 // 获取
@@ -2455,8 +3442,6 @@ let rootMinQuery = function (pageName, recoveryMode) {
             returns.__paths__.push(fk);
         }
         if (!MinQuery.isEmptyObject(keyString)) {
-            console.log("setData:",keyString)
-            !!MinQuery.pageInstance && console.info("setData!!");
             // 如果存在page对象则将数据绑定到page对象上
             // 小程序原型方法
             !!MinQuery.pageInstance && MinQuery.pageInstance.setData(keyString);
@@ -2485,6 +3470,14 @@ let rootMinQuery = function (pageName, recoveryMode) {
         setData(keyString, keyValue, stayFormat, forceAccess) {
             // 修改并使用Page实例对象中的setData原生方法同步数据
             return setCurrentPageData(keyString, keyValue, !!stayFormat ? stayFormat : false, MinQuery.type(forceAccess) === "boolean" ? !forceAccess : true);
+        },
+        // setData Hook 访问器，可在访问的同时设置一次当前数据Hook的值
+        dataAccess(keyString, keyValue) {
+            if (MinQuery.isString(keyString)) {
+                let _hook = ___dataHooks__[keyString];
+                if (keyValue) _hook.set(keyValue);
+                return _hook;
+            } else return undefined;
         },
         /** 用于检测数据变化，接收一个查询key组成的字符串和一个改变触发匿名处理函数;
          *  @param: fuzzy 参数为可选参数,类型为Boolean。设置为true时则对key字符串进行模糊匹配，而非绝对匹配
@@ -2518,7 +3511,7 @@ let rootMinQuery = function (pageName, recoveryMode) {
     return MinQuery;
 }
 // 抛出接口
-module.exports = {
+module.exports = wx.MinQuery = {
     load(pageName, recoveryMode) {
         if (typeof pageName !== "string") {
             console.error(`MinQuery instance loader a string page name, not this:`, pageName);
@@ -2536,7 +3529,7 @@ module.exports = {
         };
         return rootMinQuery(pageName, recoveryMode);
     },
-    pages(pageName) {
+    page(pageName) {
         return $pageLoadedInstances.get(pageName);
     }
 };

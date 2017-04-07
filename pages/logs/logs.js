@@ -13,10 +13,62 @@
 //     })
 //   }
 // })
-var $ = require("../../MinQuery/index").load("logs");
-var userName = $.setData({ "userName": "JasonDRZ" });
-$((_$) => {
+var $ = wx.MinQuery.load("logs");
 
+
+
+function task(arg, cont) { // 模拟异步任务
+  $.Thenjs.nextTick(function () {
+    cont(null, arg);
+  });
+}
+
+// $.Thenjs($.scanCode()).fin(function(cont,err,e){
+//   console.log(err,e);
+//   cont(err)
+// });
+// .fail(function (cont, error) { // 通常应该在链的最后放置一个 `fail` 方法收集异常
+//   console.log(error);
+// });
+
+$.Thenjs(function (cont) {
+  _task(10, cont);
+})
+.then(function (cont, arg) {
+  console.log(arg);
+  cont(new Error('error!'), 123);
+})
+.fin(function (cont, error, result) {
+  console.log(error, result);
+  cont();
+})
+.each([0, 1, 2], function (cont, value) {
+  task(value * 2, cont); // 并行执行队列任务，把队列 list 中的每一个值输入到 task 中运行
+})
+.then(function (cont, result) {
+  console.log(result);
+  cont();
+})
+.series([ // 串行执行队列任务
+  function (cont) { task(88, cont); }, // 队列第一个是异步任务
+  function (cont) { cont(null, 99); } // 第二个是同步任务
+])
+.then(function (cont, result) {
+  console.log(result);
+  cont(new Error('error!!'));
+})
+.fail(function (cont, error) { // 通常应该在链的最后放置一个 `fail` 方法收集异常
+  console.log(error);
+  console.log('DEMO END!');
+});
+
+
+
+
+
+var userName = $.setData({ "userName": "JasonDRZ" });
+var _page = $("page");
+$((_$) => {
   $.$on("user-login", function (e) {
     console.log(e)
   });
@@ -25,7 +77,7 @@ $((_$) => {
     console.info(`Got userName value changes.New: ${n},Old: ${o}`, p);
   }, true)
   // console.log(_$(".name,#elements"));
-  var _page = $("page");
+  
   var $coustom = $("$coustomOne");
   var canvas = $("#myCanvas");
   var _window = $("window").get(0);
@@ -44,7 +96,7 @@ $((_$) => {
     })
   });
   // },13);
-var __vedio = $("#myVideo").on("pause",function(e){
+var __video = $("#myVideo").on("pause",function(e){
   console.log("Pause:",e);
   wx.chooseAddress({
   success: function (res) {
@@ -59,18 +111,23 @@ var __vedio = $("#myVideo").on("pause",function(e){
   }
 })
 }).on("tap",function(e){
-  console.log("vedio tap:",e)
-}).vedio()
+  console.log("video tap:",e)
+}).video()
 
 
   $.ajax('https://minapp.ieyuan.com/jwhudong/api.php?op=content&module=comm&catid=67&page=1&state=0', (res, state) => {
     console.log(res, state);
-    console.info($('app'));
+    console.info($.$trigger('getUserInfo',function(i){
+      // 通过dataAccess方法获取到globalData，的hook函数
+      let globals = (this.dataAccess('globalData'));
+      console.log(globals.get());
+      console.info("I have success getUserInfo!!!",i)
+    }));
   }).success((res, state) => {
     console.log(res);
   }).fail((res, state) => {
     console.log(res);
-  })
+  });
   var ctx = canvas.canvas(true);
   // ctx.setFillStyle('red')
   // ctx.fillRect(10, 10, 150, 75)
@@ -82,7 +139,7 @@ var __vedio = $("#myVideo").on("pause",function(e){
   secondSelector.config("gander", "男");
   secondSelector.config("height", "168cm");
   secondSelector.on("tap", function (e) {
-    __vedio.send(userName.get());
+    __video.send(userName.get());
     console.info(e.data('mClass'));
     userName.set("JasonDRZ&CSQ");
     console.log($(this).config().name("JSONAFDFS"));
@@ -101,8 +158,11 @@ var __vedio = $("#myVideo").on("pause",function(e){
   _page.on("ready", "ready to go", function (e) {
     console.info("Page ready event has a custom handler!", e)
 
+    $.showLoading("我正在加载！").success(function(){
+      console.info("我已经加载成功了！！！！！！")
+    })
 
-
+    // wx.showLoading("Wx loading...")
 
     $coustom.animation(function () {
       console.log(this)
@@ -117,7 +177,7 @@ var __vedio = $("#myVideo").on("pause",function(e){
   }).registerEvent("ready", function () {
     console.log("第一个page ready注册事件！", $.app("globalData"))
   }).registerEvent("ready", function () {
-    console.log("第二个page ready注册事件！", $.pages())
+    console.log("第二个page ready注册事件！", $.page())
   })
   _page.on("load", { name: "pageLoader2" }, function (op) {
     console.info("Page load event has a custom handler!", op);

@@ -1,7 +1,7 @@
 // components
 var MinQuery = require("components/minquery");
 // MinQuery.plugin("$wx",{expando:false});
-module.exports = wx.MinQuery = MinQuery;
+module.exports = MinQuery;
 
 // var cloneMinQuery = function (pname) {
 //     var _cloneMQ = function(){};
