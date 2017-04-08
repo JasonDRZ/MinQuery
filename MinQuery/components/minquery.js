@@ -125,7 +125,13 @@ const wxMethodsParamsConfig = [{
     param_def: [],
     param_nor: []
 }, {
-    name: 'stopRecord'
+    name: 'stopRecord',
+    agent_call: function (wxMethod, options) {
+        setTimeout(function () {
+            delete options.delay;
+            wxMethod(options);
+        }, options.delay ? options.delay : 0);
+    }
 }, {
     // 音频播放
     name: 'playVoice',
@@ -134,7 +140,13 @@ const wxMethodsParamsConfig = [{
 }, {
     name: 'pauseVoice'
 }, {
-    name: 'stopVoice'
+    name: 'stopVoice',
+    agent_call: function (wxMethod, options) {
+        setTimeout(function () {
+            delete options.delay;
+            wxMethod(options);
+        }, options.delay ? options.delay : 0);
+    }
 }, {
     // 音乐播放控制
     name: 'getBackgroundAudioPlayerState',
@@ -258,7 +270,13 @@ const wxMethodsParamsConfig = [{
 }, {
     name: 'stopCompass',
     param_def: [],
-    param_nor: []
+    param_nor: [],
+    agent_call: function (wxMethod, options) {
+        setTimeout(function () {
+            delete options.delay;
+            wxMethod(options);
+        }, options.delay ? options.delay : 0);
+    }
 }, {
     name: 'makePhoneCall',
     param_def: [['phoneNumber']],
@@ -1386,6 +1404,8 @@ const rootMinQuery = function (pageName, recoveryMode) {
         push = arr.push,
         indexOf = arr.indexOf,
         class2type = {},
+        // 用于初始化某一类型的对象
+        typeInitial = {},
         toString = class2type.toString,
         hasOwn = class2type.hasOwnProperty,
 
@@ -1847,9 +1867,14 @@ const rootMinQuery = function (pageName, recoveryMode) {
         Thenjs: Thenjs
     });
     // 生成类型字典
+    let _classTypeInitial = [false,0,'',function(){},[],MinQuery.now(),new RegExp(),{},new Error(),0]
     MinQuery.each("Boolean Number String Function Array Date RegExp Object Error Uint8Array".split(" "), function (i, name) {
-        class2type["[object " + name + "]"] = name.toLowerCase();
+        let _l_name = name.toLowerCase();
+        class2type["[object " + name + "]"] = _l_name;
+        typeInitial[_l_name] = _classTypeInitial[i];
     });
+
+    
 
     // 继承wx二次封装接口
     // 链式注册对象
@@ -1919,7 +1944,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 }
             });
             MinQuery.isFunction(wrapperCall) 
-                ? wrapperCall(methodName, options) 
+                ? wrapperCall(context[methodName], options) 
                 : (MinQuery.type(options) == 'array' ? context[methodName].apply(null,options) : context[methodName].call(null,options));
             // 支持then.js
             const _suport_then = function (cont) {
@@ -1949,6 +1974,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             }, options.delay ? options.delay : 0);
         }
     };
+
     const registerWxMethods = function () {
         var _wxMethodsTmp = {};
         MinQuery.each(wxMethodsParamsConfig, function (i, _oj) {
@@ -1965,6 +1991,11 @@ const rootMinQuery = function (pageName, recoveryMode) {
                             options = args[0];
                         }else if (!!_param_all) {
                             if (_param_all.length > 0) {
+                                MinQuery.each(_param_def,function(_i,dar){
+                                    _type = !!dar[1] ? dar[1] : 'string';
+                                    options[dar[0]] = typeInitial[_type];
+                                });
+                                
                                 MinQuery.each(args, function (_i, ar) {
                                     _type = !!_param_all[_i][1] ? _param_all[_i][1] : 'string';
                                     if (MinQuery.type(ar) === _type) {

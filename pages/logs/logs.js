@@ -158,11 +158,18 @@ var __video = $("#myVideo").on("pause",function(e){
   _page.on("ready", "ready to go", function (e) {
     console.info("Page ready event has a custom handler!", e)
 
-    $.showLoading("我正在加载！").success(function(){
-      console.info("我已经加载成功了！！！！！！")
-    })
+    // $.showModal("我正在加载！","莫泰的内容！！",true,"Canc","#5ee2c4","Conf","#1abee2",{success: function(){
+    //   console.info("我已经加载成功了！！！！！！")
+    // }})
+
+    // .success(function(){
+    //   console.info("我已经加载成功了！！！！！！")
+    // })
 
     // wx.showLoading("Wx loading...")
+
+    $.startRecord().success(function(res){console.info(res)});
+    $.stopRecord(1000);
 
     $coustom.animation(function () {
       console.log(this)
