@@ -10,6 +10,9 @@ $(()=>{
   var globalData = $.setData('globalData');
   app.on('launch',function(){
     console.info("App has onLaunched!!!!!!!!!!!!!!!")
+  }).bind('userLogin',function(){
+    $.showLoading('登录中。。。。');
+    $.hideLoading(3000);
   })
   $.$on('getUserInfo',function(cb){
     var userInfo = globalData.get('userInfo');

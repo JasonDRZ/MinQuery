@@ -1867,14 +1867,14 @@ const rootMinQuery = function (pageName, recoveryMode) {
         Thenjs: Thenjs
     });
     // 生成类型字典
-    let _classTypeInitial = [false,0,'',function(){},[],MinQuery.now(),new RegExp(),{},new Error(),0]
+    let _classTypeInitial = [false, 0, '', function () { }, [], MinQuery.now(), new RegExp(), {}, new Error(), 0]
     MinQuery.each("Boolean Number String Function Array Date RegExp Object Error Uint8Array".split(" "), function (i, name) {
         let _l_name = name.toLowerCase();
         class2type["[object " + name + "]"] = _l_name;
         typeInitial[_l_name] = _classTypeInitial[i];
     });
 
-    
+
 
     // 继承wx二次封装接口
     // 链式注册对象
@@ -1943,9 +1943,9 @@ const rootMinQuery = function (pageName, recoveryMode) {
                     'cancel' in _backup && _backup['cancel'](e);
                 }
             });
-            MinQuery.isFunction(wrapperCall) 
-                ? wrapperCall(context[methodName], options) 
-                : (MinQuery.type(options) == 'array' ? context[methodName].apply(null,options) : context[methodName].call(null,options));
+            MinQuery.isFunction(wrapperCall)
+                ? wrapperCall(context[methodName], options)
+                : (MinQuery.type(options) == 'array' ? context[methodName].apply(null, options) : context[methodName].call(null, options));
             // 支持then.js
             const _suport_then = function (cont) {
                 _continue_func = cont;
@@ -1986,16 +1986,16 @@ const rootMinQuery = function (pageName, recoveryMode) {
                     } else _param_all = null;
                     return function () {
                         var args = slice.call(arguments), _last = args.pop(), _type = 'string';
-                        if (!MinQuery.isPlainObject(_last)) {args.push(_last);_last = null};
-                        if(args[0] && MinQuery.type(args[0]) === 'function'){
+                        if (!MinQuery.isPlainObject(_last)) { args.push(_last); _last = null };
+                        if (args[0] && MinQuery.type(args[0]) === 'function') {
                             options = args[0];
-                        }else if (!!_param_all) {
+                        } else if (!!_param_all) {
                             if (_param_all.length > 0) {
-                                MinQuery.each(_param_def,function(_i,dar){
+                                MinQuery.each(_param_def, function (_i, dar) {
                                     _type = !!dar[1] ? dar[1] : 'string';
                                     options[dar[0]] = typeInitial[_type];
                                 });
-                                
+
                                 MinQuery.each(args, function (_i, ar) {
                                     _type = !!_param_all[_i][1] ? _param_all[_i][1] : 'string';
                                     if (MinQuery.type(ar) === _type) {
@@ -2005,11 +2005,11 @@ const rootMinQuery = function (pageName, recoveryMode) {
                                     }
                                 });
                             }
-                            !!_last && MinQuery.extend(options,_last);
+                            !!_last && MinQuery.extend(options, _last);
                         } else {
                             options = args;
                         }
-                        console.log(_inob.name,options, _inob['agent_call']);
+                        console.log(_inob.name, options, _inob['agent_call']);
                         return wxMethodsCallbackGenerate(_inob.name, options, _inob['agent_call']);
                     }
                 })(_oj);
@@ -2023,156 +2023,6 @@ const rootMinQuery = function (pageName, recoveryMode) {
 
     MinQuery.extend({
         $window: $windowInfo,
-
-        // // scanCode
-        // scanCode(call) {
-        //     return wxMethodsCallbackGenerate("scanCode");
-        // },
-        // // makePhoneCall
-        // makePhoneCall(phone, call) {
-        //     return wxMethodsCallbackGenerate("makePhoneCall", MinQuery.isPlainObject(phone) ? phone : {
-        //         phoneNumber: phone
-        //     });
-        // },
-        // // showToast
-        // showToast(title, icon, delay, mask, call) {
-        //     let icons = {
-        //         loading: "loading",
-        //         success: "success"
-        //     }
-        //     if (MinQuery.isString(title)) {
-        //         console.error("The toast title param must be a string!");
-        //         return "";
-        //     } else if (typeof icon === "boolean") {
-        //         mask = icon;
-        //         icon = null;
-        //     } else if (typeof delay === "boolean") {
-        //         mask = delay;
-        //         delay = null;
-        //         if (!icons[icon]) {
-        //             console.error(`Wx do not suport icon type of [${icon}]!`);
-        //             return;
-        //         }
-        //     }
-        //     wx.showToast({
-        //         title: title,
-        //         icon: icon ? icon : '',
-        //         duration: delay ? delay : 2000,
-        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-        //     });
-        //     return asyncHandler.register("showToast")
-        // },
-        // // hideToast
-        // hideToast(delay) {
-        //     MinQuery.timeOut(wx.hideToast, delay ? delay : 0, true);
-        // },
-        // // showActionSheet
-        // actionSheet(items, color, call) {
-        //     if (!items instanceof Array) {
-        //         console.error("showActionSheet items must be an Array instance!");
-        //         return;
-        //     }
-        //     wx.showActionSheet({
-        //         itemList: items,
-        //         itemColor: color ? color : "",
-        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-        //     });
-        //     return asyncHandler.register("showActionSheet")
-        // },
-        // showActionSheet: MinQuery.actionSheet,
-        // // showModal
-        // modal(title, content, config, call) {
-        //     if ((MinQuery.isString(title) && !MinQuery.isEmpty(title)) || MinQuery.isString(content)) {
-        //         console.error("The Modal title and content type must be string!", title, content);
-        //         return;
-        //     }
-        //     let options = {
-        //         showCancel: true,
-        //         cancelText: "取消",
-        //         cancelColor: "#000000",
-        //         confirmText: "确定",
-        //         confirmColor: "#3CC51F"
-        //     }
-        //     if (config instanceof Object) {
-        //         MinQuery.extend(options, config);
-        //     }
-        //     wx.showModal({
-        //         title: title,
-        //         content: content,
-        //         showCancel: options.showCancel,
-        //         cancelText: options.cancelText,
-        //         cancelColor: options.cancelColor,
-        //         confirmText: options.confirmText,
-        //         confirmColor: options.confirmText,
-        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-        //     });
-        //     return asyncHandler.register("showModal");
-        // },
-        // showModal: MinQuery.modal,
-        // // setNavigationBarTitle
-        // navTitle(title, call) {
-        //     if (MinQuery.isEmpty(title)) {
-        //         console.error("setNavigationBar title must be an non-empty string！")
-        //         return;
-        //     }
-        //     wx.setNavigationBarTitle({
-        //         title: title,
-        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-        //     })
-        //     return asyncHandler.register("setNavigationBarTitle");
-        // },
-        // setNavigationBarTitle: MinQuery.navTitle,
-        // // NavigationBarLoading
-        // navLoading: {
-        //     show() {
-        //         wx.showNavigationBarLoading();
-        //     },
-        //     hide() {
-        //         wx.hideNavigationBarLoading()
-        //     }
-        // },
-        // NavigationBarLoading: MinQuery.navLoading,
-        // // Navigations
-        // navigateTo(url, call) {
-        //     wx.navigateTo({
-        //         url: url,
-        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-        //     });
-        //     return asyncHandler.register("navigateTo");
-        // },
-        // redirectTo(url, call) {
-        //     wx.redirectTo({
-        //         url: url,
-        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-        //     });
-        //     return asyncHandler.register("redirectTo");
-        // },
-        // switchTab(url, call) {
-        //     wx.switchTab({
-        //         url: url,
-        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-        //     });
-        //     return asyncHandler.register("switchTab");
-        // },
-        // navigateBack(pageNum) {
-        //     wx.navigateBack({
-        //         delta: pageNum
-        //     })
-        // },
 
         // Ajax methods
         ajax(config, data, call) {
@@ -2205,35 +2055,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 method: "post",
                 success(e) { call && call(e); }
             })
-        },
-        // // 录音控制
-        // startRecord(call) {
-        //     wx.startRecord({
-        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-        //     })
-        //     return asyncHandler.register("startRecord");
-        // },
-        // stopRecord(delay) {
-        //     MinQuery.timeOut(wx.stopRecord, delay ? delay : 0, true);
-        // },
-        // // 录音播放
-        // playVoice(filePath, call) {
-        //     wx.playVoice({
-        //         filePath: filePath,
-        //         fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e) },
-        //         success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e) },
-        //         complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e) }
-        //     })
-        //     return asyncHandler.register("playVoice");
-        // },
-        // pauseVoice(delay) {
-        //     MinQuery.timeOut(wx.pauseVoice, delay ? delay : 0, true);
-        // },
-        // stopVoice(delay) {
-        //     MinQuery.timeOut(wx.stopVoice, delay ? delay : 0, true);
-        // }
+        }
     });
 
     // Query Engine
@@ -2315,7 +2137,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                         console.error(`There is no such ${this.$selectorName} inherent event named '${_type}' on page object!`);
                         return;
                     }
-                    eventOperation.set(this, `registerEvent.${_type}`, method, data);
+                    eventHooks.set(this, `registerEvent.${_type}`, method, data);
                 })
             }
             return this;
@@ -2334,7 +2156,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                         console.error(`There is no such ${this.$selectorName} inherent event named '${_type}'!`);
                         return;
                     }
-                    eventOperation.set(this, `bind.${_type}`, method, data);
+                    eventHooks.set(this, `bind.${_type}`, method, data);
                 })
             }
             return this;
@@ -2353,7 +2175,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                         console.error(`Can not use catch method to catch a ${this.$selectorName} event!`);
                         return;
                     }
-                    eventOperation.set(this, `catch.${_type}`, method, data);
+                    eventHooks.set(this, `catch.${_type}`, method, data);
                 })
             }
             return this;
@@ -2391,9 +2213,9 @@ const rootMinQuery = function (pageName, recoveryMode) {
                                 : (e = { "$event": e, "$data": data });
                             method.call(_page, e);
                         });
-                        eventOperation.set(this, `bind.${_type}`, method, data);
+                        eventHooks.set(this, `bind.${_type}`, method, data);
                     } else {
-                        eventOperation.set(this, `bind.${_type}`, method, data);
+                        eventHooks.set(this, `bind.${_type}`, method, data);
                     }
                 })
             }
@@ -2421,19 +2243,19 @@ const rootMinQuery = function (pageName, recoveryMode) {
                             console.error(`You can not trigger an ${this.$selectorName} inherent event named [${_type}]!`);
                             return;
                         } else {
-                            let _page = self[0];
-                            if (_page[_type] && MinQuery.isFunction(_page[_type])) {
-                                MinQuery(this.$selectorName)[0][_type](data);
+                            if (_type in this && MinQuery.isFunction(this[_type])) {
+                                this[_type](data);
                                 return;
                             };
                         }
+                    } else {
+                        // 获取当前元素事件路径
+                        eroute = this.$events[triggerType] ? this.$events[triggerType][_type] : undefined;
+                        // 触发传递数据，并接收返回数据
+                        res = eventHooks.get(eroute, {}, data);
+                        // 执行callback
+                        MinQuery.isFunction(triggerCall) && triggerCall(res);
                     }
-                    // 获取当前元素事件路径
-                    eroute = this.$events[triggerType] ? this.$events[triggerType][_type] : undefined;
-                    // 触发传递数据，并接收返回数据
-                    res = eventOperation.get(eroute, {}, data);
-                    // 执行callback
-                    MinQuery.isFunction(triggerCall) && triggerCall(res);
                 })
             }
             return this;
@@ -2448,7 +2270,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             if (!!this && this.length > 0) {
                 let eroute;
                 this.each(function () {
-                    eventOperation.set(this, `${triggerType}.${_type}`, false);
+                    eventHooks.set(this, `${triggerType}.${_type}`, false);
                     MinQuery.isFunction(offCall) && offCall.call(this);
                 })
             }
@@ -2521,11 +2343,11 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 MinQuery.isReady = false;
             };
             // 优先在事件管理器上查询并执行对应去掉on的自定义事件
-            let ret = eventOperation.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, e);
+            let ret = eventHooks.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, e);
             // 未查询到自定义事件是执行查询原始事件名称事件
             if (ret === '[No Handler]') {
                 // 查询执行元素原生事件
-                return eventOperation.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${ename}`, e);
+                return eventHooks.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${ename}`, e);
             } else {
                 return ret;
             }
@@ -2565,11 +2387,11 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 MinQuery.isReady = false;
             };
             // 优先在事件管理器上查询并执行对应去掉on的自定义事件
-            let ret = eventOperation.get(`${MinQuery.selectorsBank.page[0]}.page`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, e);
+            let ret = eventHooks.get(`${MinQuery.selectorsBank.page[0]}.page`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, e);
             // 未查询到自定义事件是执行查询原始事件名称事件
             if (ret === '[No Handler]') {
                 // 查询执行元素原生事件
-                return eventOperation.get(`${MinQuery.selectorsBank.page[0]}.page`, `bind.${ename}`, e);
+                return eventHooks.get(`${MinQuery.selectorsBank.page[0]}.page`, `bind.${ename}`, e);
             } else {
                 return ret;
             }
@@ -2582,7 +2404,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
 
 
     // a hook for event set/get
-    let eventOperation = {
+    let eventHooks = {
         // 设置对应的元素事件到事件管理器中并给当前元素写入事件查询地址
         set: function (elem, eventkeys, method, binddata) {
             if (!MinQuery.isUndefined(elem) && !MinQuery.isEmpty(eventkeys)) return;
@@ -2739,9 +2561,9 @@ const rootMinQuery = function (pageName, recoveryMode) {
             }
         })
         // 优先查询ID绑定池并执行;渲染层事件触发不存在返回数据
-        let ret = tid ? eventOperation.get(`${MinQuery.selectorsBank["#"][0]}.${tid}`, `${_type}.${e.type}`, e) : "[No Handler]";
+        let ret = tid ? eventHooks.get(`${MinQuery.selectorsBank["#"][0]}.${tid}`, `${_type}.${e.type}`, e) : "[No Handler]";
         // 如果不存在ID事件绑定则查询data-min-class绑定版
-        (ret === "[No Handler]") && tcs && eventOperation.get(`${MinQuery.selectorsBank["."][0]}.${tcs}`, `${_type}.${e.type}`, e);
+        (ret === "[No Handler]") && tcs && eventHooks.get(`${MinQuery.selectorsBank["."][0]}.${tcs}`, `${_type}.${e.type}`, e);
     }
 
     // 存储已注册元素路径
@@ -2835,7 +2657,12 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 // 对APP对象查询
                 else if (_lowsele == "app") {
                     tar_selectorTypes.push(MinQuery.selectorsBank[_lowsele][0]);
-                    multis[0] = $appInitObject;
+                    if (MinQuery.pageName == 'app') {
+                        multis[0] = $appInitObject;
+                    } else {
+                        // 获取app对象实例
+                        multis[0] = MinQuery.page('app')('app')[0];
+                    }
                     multis.length = 1;
                 }
                 // 查询所有已注册元素

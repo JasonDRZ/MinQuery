@@ -1,5 +1,5 @@
 // components
-var MinQuery = require("components/minquery");
+var MinQuery = require("components/minquery-new");
 // MinQuery.plugin("$wx",{expando:false});
 module.exports = MinQuery;
 

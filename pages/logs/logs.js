@@ -111,6 +111,7 @@ var __video = $("#myVideo").on("pause",function(e){
   }
 })
 }).on("tap",function(e){
+  $('app').trigger('userLogin');
   console.log("video tap:",e)
 }).video()
 
