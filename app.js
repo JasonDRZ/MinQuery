@@ -7,13 +7,15 @@ var $ = require("MinQuery/index").load("app");
 //   });
 $(()=>{
   var app = $("app");
-  var globalData = $.setData('globalData');
+  var globalData = $.setData('globalData',{});
   app.on('launch',function(){
     console.info("App has onLaunched!!!!!!!!!!!!!!!")
-  }).bind('userLogin',function(){
+  }).bind('userLogin',function(cb){
+    console.log(cb);
+    $.$call(cb,"尼玛，传过来了！！")
     $.showLoading('登录中。。。。');
     $.hideLoading(3000);
-  })
+  }).data("userInfo","用户信息！！！");
   $.$on('getUserInfo',function(cb){
     var userInfo = globalData.get('userInfo');
     if(!!userInfo){

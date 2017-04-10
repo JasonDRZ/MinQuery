@@ -72,8 +72,20 @@ const $mq_config = {
             }
         }
     }
-}
+};
+// 微信小程序原生接口支持，不支持组件接口
 const wxMethodsParamsConfig = [{
+    name: "request",
+    param_def: [['url']],
+    param_nor: [['data', 'object|string'], ['header', 'object', {
+        'content-type': 'application/json'
+    }], ['method'], ['dataType', 'string', 'json']],
+    agent_call: function (wxMethod, options) {
+        // 用于支持用户小写输入
+        !!options.method && (options.method = options.method.toUpperCase());
+        wxMethod(options);
+    }
+}, {
     // 文件上传、下载
     // 方法名称
     name: 'uploadFile',
@@ -126,6 +138,7 @@ const wxMethodsParamsConfig = [{
     param_nor: []
 }, {
     name: 'stopRecord',
+    param_def: [['delay', 'number']],
     agent_call: function (wxMethod, options) {
         setTimeout(function () {
             delete options.delay;
@@ -141,6 +154,7 @@ const wxMethodsParamsConfig = [{
     name: 'pauseVoice'
 }, {
     name: 'stopVoice',
+    param_def: [['delay', 'number']],
     agent_call: function (wxMethod, options) {
         setTimeout(function () {
             delete options.delay;
@@ -269,7 +283,7 @@ const wxMethodsParamsConfig = [{
     param_nor: []
 }, {
     name: 'stopCompass',
-    param_def: [],
+    param_def: [['delay', 'number']],
     param_nor: [],
     agent_call: function (wxMethod, options) {
         setTimeout(function () {
@@ -462,6 +476,635 @@ const wxMethodsParamsConfig = [{
 }, {
     name: 'arrayBufferToBase64'
 }];
+
+// MinQuery 工具方法及变量
+// 页面数据操作主体 
+let
+    // version
+    version = "2.1.2",
+    arr = [],
+    slice = arr.slice,
+    concat = arr.concat,
+    push = arr.push,
+    indexOf = arr.indexOf,
+    class2type = {},
+    // 用于初始化某一类型的对象
+    typeInitial = {},
+    toString = class2type.toString,
+    hasOwn = class2type.hasOwnProperty,
+
+    rtrim = /\s/g;
+// 生成类型字典
+let _classTypeInitial = [false, 0, '', function () { }, [], Date.now(), new RegExp(), {}, new Error(), 0];
+("Boolean Number String Function Array Date RegExp Object Error Uint8Array".split(" ")).forEach(function (name, i) {
+    let _l_name = name.toLowerCase();
+    class2type["[object " + name + "]"] = _l_name;
+    typeInitial[_l_name] = _classTypeInitial[i];
+});
+let _$ = {
+    error: function (msg) {
+        console.error(msg);
+    },
+
+    noop: function () { },
+
+    isFunction: function (obj) {
+        return _$.type(obj) === "function";
+    },
+
+    isArraylike: function (obj) {
+        let length = obj.length,
+            type = _$.type(obj);
+
+        if (type === "function") {
+            return false;
+        }
+
+        return type === "array" || length === 0 ||
+            typeof length === "number" && length > 0 && (length - 1) in obj;
+    },
+
+    isArray: Array.isArray,
+
+    isNumeric: function (obj) {
+        // parseFloat NaNs numeric-cast false positives (null|true|false|"")
+        // ...but misinterprets leading-number strings, particularly hex literals ("0x...")
+        // subtraction forces infinities to NaN
+        // adding 1 corrects loss of precision from parseFloat (#15100)
+        return !_$.isArray(obj) && (obj - parseFloat(obj) + 1) >= 0;
+    },
+
+    isPlainObject: function (obj) {
+        // Not plain objects:
+        // - Any object or value whose internal [[Class]] property is not "[object Object]"
+        if (_$.type(obj) !== "object") {
+            return false;
+        }
+
+        if (obj.constructor &&
+            !hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
+            return false;
+        }
+
+        // If the function hasn't returned already, we're confident that
+        // |obj| is a plain object, created by {} or constructed with new Object
+        return true;
+    },
+
+    isString: function (str) {
+        return typeof str === 'string';
+    },
+
+    isEmpty: function (str) {
+        return typeof str === 'undefined' || str === null || _$.trim(str + "") == "";
+    },
+
+    isUndefined: function (obj) {
+        return typeof obj === 'undefined';
+    },
+
+    isEmptyObject: function (obj) {
+        let name;
+        for (name in obj) {
+            return false;
+        }
+        return true;
+    },
+
+    type: function (obj) {
+        if (obj == null) {
+            return obj + "";
+        }
+        // Support: Android<4.0, iOS<6 (functionish RegExp)
+        return typeof obj === "object" || typeof obj === "function" ?
+            class2type[toString.call(obj)] || "object" :
+            typeof obj;
+    },
+    // 数据镜像：将已有数据镜像还原到某一原状态；
+    recoveryObject: function (source, mirror, deep) {
+        let isArray, s;
+        // 支持对象数据恢复，deep操作时支持数组
+        if (_$.isPlainObject(source) || (deep && _$.isArray(source))) {
+            for (s in source) {
+                // 均存在这恢复镜像数据到源数据
+                if (!(s in source) && !(s in mirror)) {
+                    if (deep) {
+                        // 进行深度恢复操作
+                        if (_$.isPlainObject(source[s]) || (deep && _$.isArray(source[s]))) {
+                            _$.recoveryObject(source[s], mirror[s], deep);
+                        } else {
+                            // 非对象或数组，则进行赋值操作
+                            source[s] = mirror[s];
+                        }
+                    } else {
+                        // 非深度恢复，则进行赋值操作
+                        source[s] = mirror[s]
+                    }
+                } else if (!(s in source) && s in mirror) {
+                    // 如果镜像数据不存在，而源数据存在，则删除源数据
+                    delete source[s];
+                } else {
+                    // 如果镜像数据存在，源数据不存在，则恢复
+                    source[s] = mirror[s];
+                }
+            }
+        }
+    },
+    // args is for internal usage only
+    each: function (obj, callback, args) {
+        let value,
+            i = 0,
+            length = obj.length,
+
+            isArray = _$.isArraylike(obj);
+
+        if (args) {
+            if (isArray) {
+                for (; i < length;) {
+                    value = callback.apply(obj[i++], args);
+
+                    if (value === false) {
+                        break;
+                    }
+                }
+            } else {
+                for (i in obj) {
+                    value = callback.apply(obj[i], args);
+
+                    if (value === false) {
+                        break;
+                    }
+                }
+            }
+
+            // A special, fast, case for the most common use of each
+        } else {
+            if (isArray) {
+                for (; i < length;) {
+                    value = callback.call(obj[i], i, obj[i++]);
+
+                    if (value === false) {
+                        break;
+                    }
+                }
+            } else {
+                for (i in obj) {
+                    value = callback.call(obj[i], i, obj[i]);
+
+                    if (value === false) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return obj;
+    },
+
+    trim: function (text) {
+        return text == null ?
+            "" :
+            (text + "").replace(rtrim, "");
+    },
+
+    // results is for internal usage only
+    makeArray: function (arr, results) {
+        let ret = results || [];
+
+        if (arr != null) {
+            if (_$.isArraylike(Object(arr))) {
+                _$.merge(ret,
+                    typeof arr === "string" ? [arr] : arr
+                );
+            } else {
+                push.call(ret, arr);
+            }
+        }
+
+        return ret;
+    },
+
+    inArray: function (elem, arr, i) {
+        return arr == null ? -1 : indexOf.call(arr, elem, i);
+    },
+
+    merge: function (first, second) {
+        let len = +second.length,
+            j = 0,
+            i = first.length;
+
+        for (; j < len; j++) {
+            first[i++] = second[j];
+        }
+
+        first.length = i;
+
+        return first;
+    },
+
+    grep: function (elems, callback, invert) {
+        let callbackInverse,
+            matches = [],
+            i = 0,
+            length = elems.length,
+            callbackExpect = !invert;
+
+        // Go through the array, only saving the items
+        // that pass the validator function
+        for (; i < length; i++) {
+            callbackInverse = !callback(elems[i], i);
+            if (callbackInverse !== callbackExpect) {
+                matches.push(elems[i]);
+            }
+        }
+
+        return matches;
+    },
+
+    // arg is for internal usage only
+    map: function (elems, callback, arg) {
+        let value,
+            i = 0,
+            length = elems.length,
+            isArray = _$.isArraylike(elems),
+            ret = [];
+
+        // Go through the array, translating each of the items to their new values
+        if (isArray) {
+            for (; i < length; i++) {
+                value = callback(elems[i], i, arg);
+
+                if (value != null) {
+                    ret.push(value);
+                }
+            }
+
+            // Go through every key on the object,
+        } else {
+            for (i in elems) {
+                value = callback(elems[i], i, arg);
+
+                if (value != null) {
+                    ret.push(value);
+                }
+            }
+        }
+
+        // Flatten any nested arrays
+        return concat.apply([], ret);
+    },
+    // 短横线[或其他连接符]转驼峰
+    toHump: function (str, symbal) {
+        let reg = new RegExp((symbal ? symbal : "-") + "(\w)", 'g');
+        return str.replace(reg, function ($0, $1) {
+            return $1.toUpperCase();
+        });
+    },
+    // 驼峰转中横线或任意链接符
+    humpToAny: function (str, symbal) {
+        return str.replace(/([A-Z])/g, (symbal ? symbal : "-") + "$1").toLowerCase();
+    },
+    // 格式化日期，支持时间戳和Date实例
+    formatDate: function (date, fmt) {
+        //author: meizz,jason
+        if (date instanceof Date || typeof date === 'number') {
+            typeof date === 'number' && (date = new Date(date));
+        } else {
+            console.error("The formatDate first param must be an Date() instance or timestamp!");
+            return date;
+        }
+        let o = {
+            "m+": date.getMonth() + 1, //月份
+            "d+": date.getDate(), //日
+            "h+": date.getHours(), //小时
+            "i+": date.getMinutes(), //分
+            "s+": date.getSeconds(), //秒
+            "q+": Math.floor((date.getMonth() + 3) / 3), //季度
+            "S": date.getMilliseconds() //毫秒
+        };
+        if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (date.getFullYear() + "").substr(4 - RegExp.$1.length));
+        for (let k in o)
+            if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+        return fmt;
+    },
+    // 当前时间戳
+    now: Date.now,
+    // Thenjs
+    Thenjs: Thenjs
+}, _$_proto_ = {
+
+};
+// 简易原型继承方法，框架外部使用时仅能做对象浅层继承
+const $extend = function () {
+    let options, name, src, copy, copyIsArray, clone,
+        target = arguments[0] || {},
+        i = 1,
+        length = arguments.length,
+        deep = false;
+
+    // Handle a deep copy situation
+    if (typeof target === "boolean") {
+        deep = target;
+
+        // Skip the boolean and the target
+        target = arguments[i] || {};
+        i++;
+    }
+
+    // Handle case when target is a string or something (possible in deep copy)
+    if (typeof target !== "object" && !_$.isFunction(target)) {
+        target = {};
+    }
+
+    // Extend MinQuery itself if only one argument is passed
+    if (i === length) {
+        target = this;
+        i--;
+    }
+
+    for (; i < length; i++) {
+        // Only deal with non-null/undefined values
+        if ((options = arguments[i]) != null) {
+            // Extend the base object
+            for (name in options) {
+                src = target[name];
+                copy = options[name];
+
+                // Prevent never-ending loop
+                if (target === copy) {
+                    continue;
+                }
+
+                // Recurse if we're merging plain objects or arrays
+                if (deep && copy && (_$.isPlainObject(copy) || (copyIsArray = _$.isArray(copy)))) {
+                    if (copyIsArray) {
+                        copyIsArray = false;
+                        clone = src && _$.isArray(src) ? src : [];
+
+                    } else {
+                        clone = src && _$.isPlainObject(src) ? src : {};
+                    }
+
+                    // Never move original objects, clone them
+                    target[name] = $extend(deep, clone, copy);
+
+                    // Don't bring in undefined values
+                } else if (copy !== undefined) {
+                    target[name] = copy;
+                }
+            }
+        }
+    }
+
+    // Return the modified object
+    return target;
+};
+// 工具方法
+// 支持对象设置及单数据键值设置的数据查询引擎
+const $analysisDataEngine = function (sourceData, keyString, keyValue) {
+    // 如果传入的是data 查询的 key 并且使用call方法调用
+    if (_$.isString(sourceData)) {
+        sourceData = this[sourceData];
+    }
+    if (sourceData) {
+
+        // 如果不存在则返回数据源
+        if (!keyString) {
+            return sourceData;
+        }
+        // 是否获取指定键值
+        let dataRequire = false, obj = {};
+        if (_$.isString(keyString) && _$.isUndefined(keyValue)) {
+            dataRequire = true;
+            obj[keyString] = {};
+        }
+        // 如果关闭获取指定键值下，keyString不是数据对象时，则报错
+        if ((!dataRequire && _$.isUndefined(keyValue) && !_$.isPlainObject(keyString)) || (!_$.isUndefined(keyValue) && !_$.isString(keyString))) {
+            console.error(`AnalysisDataEngine params error!`, keyString, keyValue);
+            return sourceData;
+        }
+        // 复制object
+        if (!dataRequire) {
+            if (_$.isPlainObject(keyString)) {
+                obj = keyString;
+            } else
+                obj[keyString] = keyValue;
+        }
+        let undefindData = function (key, _tar) {
+            console.error(`The key:[${key}] does not exist in data:`, _tar);
+        }
+        // dataRequire模式，不存在则返回false，并终止；
+        // 非dataRequire模式，将自动初始化对象的值为指定的objInit值
+        let analyType = function (_data, key, objInit) {
+            if (!_data[key]) {
+                if (dataRequire) {
+                    // undefindData(key, _data);
+                    return false;
+                } else {
+                    _data[key] = objInit
+                    return true;
+                }
+            } else {
+                return true;
+            }
+        }
+        let dotKeys, arrKeys, eackKey, noArrKey, value, l, d;
+        // 对象循环
+        dataEach: for (l in obj) {
+            let _rd = sourceData;
+            // 优先筛选dot key
+            dotKeys = l.split(".");
+            // 存储当前字段数据
+            value = obj[l];
+            // 循环查询当前dotkey 和 arrkey对象
+            // 数组循环
+            dotKeyEach: for (d = 0; d < dotKeys.length; d++) {
+                eackKey = dotKeys[d];
+                // 忽略空键，直接进入下一阶段解析
+                if (eackKey.replace(/\s/g, "") === "") {
+                    continue dotKeyEach;
+                }
+                arrKeys = eackKey.match(/\[(.+?)\]/g);
+                if (arrKeys) {
+                    if (eackKey[eackKey.length - 1] !== "]") {
+                        console.error(`Data setter key format error: [${d}];Should like: "key","key.key","key[1].key","key[1][0].key"`);
+                        // break dataEach;
+                        // 终止当前数据项后续循环步骤
+                        break dotKeyEach;
+                    }
+                    // 去掉数组key
+                    noArrKey = eackKey.replace(arrKeys.join(""), "");
+                    // 检测遍历类型
+                    if (!analyType(_rd, noArrKey, [])) {
+                        return undefined;
+                    };
+                    // 递归赋值
+                    _rd = _rd[noArrKey];
+                    arrKeys.forEach((a, ai) => {
+                        a = Array.from(a);
+                        // 去掉中括号
+                        a.shift();
+                        a.pop();
+                        a = a.join("");
+                        // 返回查询数据
+                        if (d == dotKeys.length - 1 && ai == arrKeys.length - 1) {
+                            if (dataRequire) {
+                                return _rd[a];
+                            }
+                            _rd[a] = value;
+                        } else {
+                            // 检测并初始化为数组
+                            if (!analyType(_rd, a, [])) {
+                                return undefined;
+                            };
+                            _rd = _rd[a];
+                        }
+                    })
+                } else {
+                    // 返回查询的数据
+                    if (d == dotKeys.length - 1) {
+                        if (dataRequire) {
+                            return _rd[eackKey];
+                        }
+                        _rd[eackKey] = value;
+                    } else {
+                        // 检测并初始化为对象
+                        if (!analyType(_rd, eackKey, {})) {
+                            return undefined;
+                        };
+                        _rd = _rd[eackKey];
+                    }
+                }
+            }
+        }
+    } else {
+        console.log(`AnalysisDataEngine require's a sourceData!`)
+    }
+};
+
+
+const wxCalls = "fail,success,complete,cancel".split(",");
+const wxMethodsCallbackGenerate = function (methodName, options, wrapperCall, context) {
+    // 检测并设置wx对象上下文
+    !context && (context = wx);
+    // 检测调用方法名称及是否存在
+    if (typeof methodName == 'string' && methodName in context) {
+        !options && (options = {});
+        let _backup = {}, k, f;
+        // 剥离参数中的类型回调函数
+        for (k in wxCalls) {
+            f = wxCalls[k];
+            if (_$.isFunction(f)) {
+                // 仅存储预设回调名称中的回调函数
+                if (options.indexOf(k) !== -1) _backup[k] = f;
+                // 删除参数中非预定回调函数
+                delete options[k];
+            } else {
+                _backup[k] = _$.noop;
+            }
+        }
+        let _continue_func;
+        // 仅在参数集为Object的情况下进行回调封装继承
+        _$.isPlainObject(options) && $extend(options, {
+            fail(e) {
+                // 运行外部分离的场景处理函数
+                'fail' in _backup && _backup['fail'](e);
+            },
+            success(e) {
+                'success' in _backup && _backup['success'](e);
+            },
+            complete(e) {
+                'complete' in _backup && _backup['complete'](e);
+                // 支持Then.js的链式反应链
+                let _msg = e.errMsg.split(":"), _err = null, _data;
+                if (_msg[1] === "ok") {
+                    delete e.errMsg;
+                    _data = e;
+                } else {
+                    _err = e;
+                }
+                _$.isFunction(_continue_func) && _continue_func(_err, _data);
+            },
+            cancel(e) {
+                'cancel' in _backup && _backup['cancel'](e);
+            }
+        });
+        _$.isFunction(wrapperCall)
+            ? wrapperCall(context[methodName], options)
+            : _$.isArray(options) ? context[methodName].apply(null, options) : context[methodName].call(null, options);
+        // 支持then.js
+        const _suport_then = function (cont) {
+            _continue_func = cont;
+        }
+        // 属性方法用于方法的链式调用
+        wxCalls.forEach((m, i) => {
+            _suport_then[m] = (function (_m) {
+                return function (cb) {
+                    _$.isFunction(cb) && (_backup[_m] = cb);
+                    return this;
+                }
+            })(m)
+        });
+        return _suport_then;
+    } else {
+        console.error(`Do not have method [${methodName}] on context:`, context);
+    }
+}
+let _wxMethodsPackages = {};
+_$.each(wxMethodsParamsConfig, function (i, _oj) {
+    if (_oj.name) {
+        _wxMethodsPackages[_oj.name] = (function (_inob) {
+            let _param_def = _inob['param_def'], _param_nor = _inob['param_nor'], _param_all, options = {};
+            if (_$.isArray(_param_def)) {
+                _param_all = _$.isArray(_param_nor) ? _param_def.concat(_param_nor) : _param_def;
+            } else _param_all = null;
+            return function () {
+                // 返回的封装函数
+                let args = slice.call(arguments), _last = args.pop(), _type = 'string', _type_match = false, _preset = '', _cur_param;
+                if (!_$.isPlainObject(_last)) { args.push(_last); _last = null };
+                // 如果是传入的参数中第一个为函数，则直接将函数传入方法，不做处理
+                if (args[0] && _$.type(args[0]) === 'function') {
+                    options = args[0];
+                } else if (_$.isArray(_param_all)) {
+                    // 如果存在参数配置，进行配置设置
+                    if (_param_all.length > 0) {
+                        // 预制参数处理，所有参数字段均可预设值
+                        _$.each(_param_all, function (_i, dar) {
+                            _cur_param = _param_all[_i];
+                            _preset = _cur_param[2];
+                            // 仅设置有预制项的字段
+                            if (!_$.isUndefined(_preset)) options[dar[0]] = _preset;
+                        });
+
+                        // 已经输入的参数处理
+                        _$.each(args, function (_i, ar) {
+                            _type_match = false;
+                            _cur_param = _param_all[_i];
+                            _type = !!_cur_param[1] ? _cur_param[1] : 'string';
+                            _type = _type.split("|");
+                            // 判断是否符合多个类型中的某一个类型
+                            _$.each(_type, function (_, t) {
+                                if (_$.type(ar) === t) { _type_match = true; return false };
+                            })
+                            if (_type_match) {
+                                options[_cur_param[0]] = ar;
+                            } else {
+                                console.error(`${_inob.name} method's param ${_cur_param[0]}`)
+                            }
+                        });
+                    }
+                    // 如果最后一项为plain object，将做为参数进行集成
+                    // 、、、、、、、这会导致如果最后一个是某个参数的对象形式值时，会被误认为是参数字段对象集、、、、、
+                    !!_last && $extend(options, _last);
+                } else {
+                    // 其他情况直接apply参数
+                    options = args;
+                }
+                return wxMethodsCallbackGenerate(_inob.name, options, _inob['agent_call']);
+            }
+        })(_oj);
+    }
+});
 
 // **Github:** https://github.com/teambition/then.js
 //
@@ -906,171 +1549,7 @@ const Thenjs = (function () {
     Thenjs.VERSION = '2.0.3'
     return Thenjs
 })();
-// 检测是否空对象
-const isEmptyObject = function (obj) {
-    let name;
-    for (name in obj) {
-        return false;
-    }
-    return true;
-};
-// 简易原型继承方法，框架外部使用时仅能做对象浅层继承
-const $extend = function () {
-    let options, name, src, copy, copyIsArray, clone,
-        target = arguments[0] || {},
-        i = 1,
-        length = arguments.length,
-        deep = false;
-    if (typeof target !== "object") {
-        target = {};
-    }
-    // Extend Caller itself if only one argument is passed
-    if (i === length) {
-        target = this;
-        i--;
-    }
-    for (; i < length; i++) {
-        // Only deal with non-null/undefined values
-        if ((options = arguments[i]) != null) {
-            // Extend the base object
-            for (name in options) {
-                src = target[name];
-                copy = options[name];
-                // Prevent never-ending loop
-                if (target === copy) {
-                    continue;
-                }
-                if (copy !== undefined) {
-                    target[name] = copy;
-                }
-            }
-        }
-    }
-    // Return the modified object
-    return target;
-};
-// 工具方法
-// 支持对象设置及单数据键值设置的数据查询引擎
-const $analysisDataEngine = function (sourceData, keyString, keyValue) {
-    // 如果传入的是data 查询的 key 并且使用call方法调用
-    if (typeof sourceData === "string") {
-        sourceData = this[sourceData];
-    }
-    if (sourceData) {
 
-        // 如果不存在则返回数据源
-        if (!keyString) {
-            return sourceData;
-        }
-        // 是否获取指定键值
-        let dataRequire = false, obj = {};
-        if (typeof keyString === "string" && typeof keyValue === "undefined") {
-            dataRequire = true;
-            obj[keyString] = {};
-        }
-        // 如果关闭获取指定键值下，keyString不是数据对象时，则报错
-        if ((!dataRequire && typeof keyValue === "undefined" && !keyString instanceof Object) || (!typeof keyValue === "undefined" && typeof keyString !== "string")) {
-            console.error(`AnalysisDataEngine params error!`, keyString, keyValue);
-            return sourceData;
-        }
-        // 复制object
-        if (!dataRequire) {
-            if (keyString instanceof Object) {
-                obj = keyString;
-            } else
-                obj[keyString] = keyValue;
-        }
-        let undefindData = function (key, _tar) {
-            console.error(`The key:[${key}] does not exist in data:`, _tar);
-        }
-        // dataRequire模式，不存在则返回false，并终止；
-        // 非dataRequire模式，将自动初始化对象的值为指定的objInit值
-        let analyType = function (_data, key, objInit) {
-            if (!_data[key]) {
-                if (dataRequire) {
-                    // undefindData(key, _data);
-                    return false;
-                } else {
-                    _data[key] = objInit
-                    return true;
-                }
-            } else {
-                return true;
-            }
-        }
-        let dotKeys, arrKeys, eackKey, noArrKey, value, l, d;
-        // 对象循环
-        dataEach: for (l in obj) {
-            let _rd = sourceData;
-            // 优先筛选dot key
-            dotKeys = l.split(".");
-            // 存储当前字段数据
-            value = obj[l];
-            // 循环查询当前dotkey 和 arrkey对象
-            // 数组循环
-            dotKeyEach: for (d = 0; d < dotKeys.length; d++) {
-                eackKey = dotKeys[d];
-                // 忽略空键，直接进入下一阶段解析
-                if (eackKey.replace(/\s/g, "") === "") {
-                    continue dotKeyEach;
-                }
-                arrKeys = eackKey.match(/\[(.+?)\]/g);
-                if (arrKeys) {
-                    if (eackKey[eackKey.length - 1] !== "]") {
-                        console.error(`Data setter key format error: [${d}];Should like: "key","key.key","key[1].key","key[1][0].key"`);
-                        // break dataEach;
-                        // 终止当前数据项后续循环步骤
-                        break dotKeyEach;
-                    }
-                    // 去掉数组key
-                    noArrKey = eackKey.replace(arrKeys.join(""), "");
-                    // 检测遍历类型
-                    if (!analyType(_rd, noArrKey, [])) {
-                        return undefined;
-                    };
-                    // 递归赋值
-                    _rd = _rd[noArrKey];
-                    arrKeys.forEach((a, ai) => {
-                        a = Array.from(a);
-                        // 去掉中括号
-                        a.shift();
-                        a.pop();
-                        a = a.join("");
-                        // 返回查询数据
-                        if (d == dotKeys.length - 1 && ai == arrKeys.length - 1) {
-                            if (dataRequire) {
-                                return _rd[a];
-                            }
-                            _rd[a] = value;
-                        } else {
-                            // 检测并初始化为数组
-                            if (!analyType(_rd, a, [])) {
-                                return undefined;
-                            };
-                            _rd = _rd[a];
-                        }
-                    })
-                } else {
-                    // 返回查询的数据
-                    if (d == dotKeys.length - 1) {
-                        if (dataRequire) {
-                            return _rd[eackKey];
-                        }
-                        _rd[eackKey] = value;
-                    } else {
-                        // 检测并初始化为对象
-                        if (!analyType(_rd, eackKey, {})) {
-                            return undefined;
-                        };
-                        _rd = _rd[eackKey];
-                    }
-                }
-            }
-        }
-    } else {
-        console.log(`AnalysisDataEngine require's a sourceData!`)
-    }
-};
 //style转json
 const styleToJson = function (styleString) {
     let object = {};
@@ -1083,6 +1562,7 @@ const styleToJson = function (styleString) {
     }
     return object;
 }
+
 //格式化style数据未字符串
 const jsonToStyle = function (styleJson, extraStyle) {
     if (extraStyle !== undefined) {
@@ -1139,6 +1619,7 @@ const removeClass = function (sourceClassStr, className) {
         return sourceClassStr.join(" ");
     }
 }
+
 const $csscontrol = {
     styleToJson: styleToJson,
     jsonToStyle: jsonToStyle,
@@ -1147,6 +1628,7 @@ const $csscontrol = {
     addClass: addClass,
     removeClass: removeClass
 };
+
 
 const $getSystemInfo = function (targetObj) {
     let sys, res = {};
@@ -1290,7 +1772,7 @@ const $globalEvents = {
         this.classifyFilter(filter, _ignore, _exec);
         for (let pg in this.__events__) {
             if (pg in _ignore) continue;
-            if (!isEmptyObject(_exec)) {
+            if (!_$.isEmptyObject(_exec)) {
                 if (pg in _exec) _perm = true;
                 else _perm = false;
             } else {
@@ -1314,7 +1796,7 @@ const $globalEvents = {
         this.classifyFilter(filter, _keep, _off);
         for (let pg in this.__events__) {
             if (pg in _keep) continue;
-            if (!isEmptyObject(_off)) {
+            if (!_$.isEmptyObject(_off)) {
                 if (pg in _off) _perm = true;
                 else _perm = false;
             } else {
@@ -1381,6 +1863,10 @@ let wxAsyncApiHandler = function (context) {
     }
 }
 
+
+
+
+
 // 方法主体
 const rootMinQuery = function (pageName, recoveryMode) {
     // 检测pageName是否为字符串
@@ -1393,30 +1879,13 @@ const rootMinQuery = function (pageName, recoveryMode) {
     if (!$windowInfo.DPI) {
         $getSystemInfo($windowInfo);
     }
-
-    // 页面数据操作主体 
-    let
-        // version
-        version = "2.1.2",
-        arr = [],
-        slice = arr.slice,
-        concat = arr.concat,
-        push = arr.push,
-        indexOf = arr.indexOf,
-        class2type = {},
-        // 用于初始化某一类型的对象
-        typeInitial = {},
-        toString = class2type.toString,
-        hasOwn = class2type.hasOwnProperty,
-
-        rtrim = /\s/g,
-        // 定义MinQuery本地函数体
-        // selector为选择器
-        MinQuery = function (selector) {
-            // The MinQuery object is actually just the init constructor 'enhanced'
-            // Need init if MinQuery is called (just allow error to be thrown if not included)
-            return new pageInit(selector);
-        };
+    // 定义MinQuery本地函数体
+    // selector为选择器
+    let MinQuery = function (selector) {
+        // The MinQuery object is actually just the init constructor 'enhanced'
+        // Need init if MinQuery is called (just allow error to be thrown if not included)
+        return new pageInit(selector);
+    };
     // *******原型方法无法调用私有方法，私有方法可以调用原型方法*******
     // 
     // 原型工具方法及配置
@@ -1431,6 +1900,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
 
         // The default length of a MinQuery object is 0
         length: 0,
+
         toArray: function () {
             return slice.call(this);
         },
@@ -1452,11 +1922,10 @@ const rootMinQuery = function (pageName, recoveryMode) {
         pushStack: function (elems) {
 
             // Build a new MinQuery matched element set
-            let ret = MinQuery.merge(this.constructor(), elems);
+            let ret = _$.merge(this.constructor(), elems);
 
             // Add the old object onto the stack (as a reference)
             ret.prevObject = this;
-            // 
 
             // Return the newly-formed element set
             return ret;
@@ -1466,11 +1935,11 @@ const rootMinQuery = function (pageName, recoveryMode) {
         // (You can seed the arguments with an array of args, but this is
         // only used internally.)
         each: function (callback, args) {
-            return MinQuery.each(this, callback, args);
+            return _$.each(this, callback, args);
         },
 
         map: function (callback) {
-            return this.pushStack(MinQuery.map(this, function (elem, i) {
+            return this.pushStack(_$.map(this, function (elem, i) {
                 return callback.call(elem, i, elem);
             }));
         },
@@ -1505,73 +1974,10 @@ const rootMinQuery = function (pageName, recoveryMode) {
         splice: arr.splice
     };
     // 集成extend module
-    MinQuery.extend = MinQuery.fn.extend = function () {
-        let options, name, src, copy, copyIsArray, clone,
-            target = arguments[0] || {},
-            i = 1,
-            length = arguments.length,
-            deep = false;
-
-        // Handle a deep copy situation
-        if (typeof target === "boolean") {
-            deep = target;
-
-            // Skip the boolean and the target
-            target = arguments[i] || {};
-            i++;
-        }
-
-        // Handle case when target is a string or something (possible in deep copy)
-        if (typeof target !== "object" && !MinQuery.isFunction(target)) {
-            target = {};
-        }
-
-        // Extend MinQuery itself if only one argument is passed
-        if (i === length) {
-            target = this;
-            i--;
-        }
-
-        for (; i < length; i++) {
-            // Only deal with non-null/undefined values
-            if ((options = arguments[i]) != null) {
-                // Extend the base object
-                for (name in options) {
-                    src = target[name];
-                    copy = options[name];
-
-                    // Prevent never-ending loop
-                    if (target === copy) {
-                        continue;
-                    }
-
-                    // Recurse if we're merging plain objects or arrays
-                    if (deep && copy && (MinQuery.isPlainObject(copy) || (copyIsArray = MinQuery.isArray(copy)))) {
-                        if (copyIsArray) {
-                            copyIsArray = false;
-                            clone = src && MinQuery.isArray(src) ? src : [];
-
-                        } else {
-                            clone = src && MinQuery.isPlainObject(src) ? src : {};
-                        }
-
-                        // Never move original objects, clone them
-                        target[name] = MinQuery.extend(deep, clone, copy);
-
-                        // Don't bring in undefined values
-                    } else if (copy !== undefined) {
-                        target[name] = copy;
-                    }
-                }
-            }
-        }
-
-        // Return the modified object
-        return target;
-    };
+    MinQuery.extend = MinQuery.fn.extend = $extend;
 
     // 继承common methods
-    MinQuery.extend({
+    MinQuery.extend(MinQuery, {
         // Unique for each copy of MinQuery on the page
         expando: "MinQuery_" + (version + Math.random()).replace(/\D/g, ""),
 
@@ -1580,457 +1986,41 @@ const rootMinQuery = function (pageName, recoveryMode) {
         // To detecte if the Page event onReady is triggered
         isReady: false,
         // To identify if the MinQuery initial data has been injected in Page Function;
-        pageInjected: false,
+        pageInjected: false
+    },
+        // 继承外部工具方法
+        _$);
 
-        error: function (msg) {
-            console.error(msg);
-        },
-
-        noop: function () { },
-
-        isFunction: function (obj) {
-            return MinQuery.type(obj) === "function";
-        },
-
-        isArraylike: function (obj) {
-            let length = obj.length,
-                type = MinQuery.type(obj);
-
-            if (type === "function") {
-                return false;
-            }
-
-            return type === "array" || length === 0 ||
-                typeof length === "number" && length > 0 && (length - 1) in obj;
-        },
-
-        isArray: Array.isArray,
-
-        isNumeric: function (obj) {
-            // parseFloat NaNs numeric-cast false positives (null|true|false|"")
-            // ...but misinterprets leading-number strings, particularly hex literals ("0x...")
-            // subtraction forces infinities to NaN
-            // adding 1 corrects loss of precision from parseFloat (#15100)
-            return !MinQuery.isArray(obj) && (obj - parseFloat(obj) + 1) >= 0;
-        },
-
-        isPlainObject: function (obj) {
-            // Not plain objects:
-            // - Any object or value whose internal [[Class]] property is not "[object Object]"
-            if (MinQuery.type(obj) !== "object") {
-                return false;
-            }
-
-            if (obj.constructor &&
-                !hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
-                return false;
-            }
-
-            // If the function hasn't returned already, we're confident that
-            // |obj| is a plain object, created by {} or constructed with new Object
-            return true;
-        },
-
-        isString: function (str) {
-            return typeof str === 'string';
-        },
-
-        isEmpty: function (str) {
-            return typeof str === 'undefined' || str === null || MinQuery.trim(str + "") == "";
-        },
-
-        isUndefined: function (obj) {
-            return typeof str === 'undefined';
-        },
-
-        isEmptyObject: isEmptyObject,
-
-        type: function (obj) {
-            if (obj == null) {
-                return obj + "";
-            }
-            // Support: Android<4.0, iOS<6 (functionish RegExp)
-            return typeof obj === "object" || typeof obj === "function" ?
-                class2type[toString.call(obj)] || "object" :
-                typeof obj;
-        },
-        // 数据镜像：将已有数据镜像还原到某一原状态；
-        recoveryObject: function (source, mirror, deep) {
-            let isArray, s;
-            // 支持对象数据恢复，deep操作时支持数组
-            if (MinQuery.isPlainObject(source) || (deep && MinQuery.isArray(source))) {
-                for (s in source) {
-                    // 均存在这恢复镜像数据到源数据
-                    if (!MinQuery.isUndefined(source[s]) && !MinQuery.isUndefined(mirror[s])) {
-                        if (deep) {
-                            // 进行深度恢复操作
-                            if (MinQuery.isPlainObject(source[s]) || (deep && MinQuery.isArray(source[s]))) {
-                                MinQuery.recoveryObject(source[s], mirror[s], deep);
-                            } else {
-                                // 非对象或数组，则进行赋值操作
-                                source[s] = mirror[s];
-                            }
-                        } else {
-                            // 非深度恢复，则进行赋值操作
-                            source[s] = mirror[s]
-                        }
-                    } else if (!MinQuery.isUndefined(source[s]) && MinQuery.isUndefined(mirror[s])) {
-                        // 如果镜像数据不存在，而源数据存在，则删除源数据
-                        delete source[s];
-                    } else {
-                        // 如果镜像数据存在，源数据不存在，则恢复
-                        source[s] = mirror[s];
-                    }
-                }
-            }
-        },
-        // args is for internal usage only
-        each: function (obj, callback, args) {
-            let value,
-                i = 0,
-                length = obj.length,
-
-                isArray = MinQuery.isArraylike(obj);
-
-            if (args) {
-                if (isArray) {
-                    for (; i < length;) {
-                        value = callback.apply(obj[i++], args);
-
-                        if (value === false) {
-                            break;
-                        }
-                    }
-                } else {
-                    for (i in obj) {
-                        value = callback.apply(obj[i], args);
-
-                        if (value === false) {
-                            break;
-                        }
-                    }
-                }
-
-                // A special, fast, case for the most common use of each
-            } else {
-                if (isArray) {
-                    for (; i < length;) {
-                        value = callback.call(obj[i], i, obj[i++]);
-
-                        if (value === false) {
-                            break;
-                        }
-                    }
-                } else {
-                    for (i in obj) {
-                        value = callback.call(obj[i], i, obj[i]);
-
-                        if (value === false) {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            return obj;
-        },
-
-        trim: function (text) {
-            return text == null ?
-                "" :
-                (text + "").replace(rtrim, "");
-        },
-
-        // results is for internal usage only
-        makeArray: function (arr, results) {
-            let ret = results || [];
-
-            if (arr != null) {
-                if (MinQuery.isArraylike(Object(arr))) {
-                    MinQuery.merge(ret,
-                        typeof arr === "string" ? [arr] : arr
-                    );
-                } else {
-                    push.call(ret, arr);
-                }
-            }
-
-            return ret;
-        },
-
-        inArray: function (elem, arr, i) {
-            return arr == null ? -1 : indexOf.call(arr, elem, i);
-        },
-
-        merge: function (first, second) {
-            let len = +second.length,
-                j = 0,
-                i = first.length;
-
-            for (; j < len; j++) {
-                first[i++] = second[j];
-            }
-
-            first.length = i;
-
-            return first;
-        },
-
-        grep: function (elems, callback, invert) {
-            let callbackInverse,
-                matches = [],
-                i = 0,
-                length = elems.length,
-                callbackExpect = !invert;
-
-            // Go through the array, only saving the items
-            // that pass the validator function
-            for (; i < length; i++) {
-                callbackInverse = !callback(elems[i], i);
-                if (callbackInverse !== callbackExpect) {
-                    matches.push(elems[i]);
-                }
-            }
-
-            return matches;
-        },
-
-        // arg is for internal usage only
-        map: function (elems, callback, arg) {
-            let value,
-                i = 0,
-                length = elems.length,
-                isArray = MinQuery.isArraylike(elems),
-                ret = [];
-
-            // Go through the array, translating each of the items to their new values
-            if (isArray) {
-                for (; i < length; i++) {
-                    value = callback(elems[i], i, arg);
-
-                    if (value != null) {
-                        ret.push(value);
-                    }
-                }
-
-                // Go through every key on the object,
-            } else {
-                for (i in elems) {
-                    value = callback(elems[i], i, arg);
-
-                    if (value != null) {
-                        ret.push(value);
-                    }
-                }
-            }
-
-            // Flatten any nested arrays
-            return concat.apply([], ret);
-        },
-        // 短横线[或其他连接符]转驼峰
-        toHump: function (str, symbal) {
-            let reg = new RegExp((symbal ? symbal : "-") + "(\w)", 'g');
-            return str.replace(reg, function ($0, $1) {
-                return $1.toUpperCase();
-            });
-        },
-        // 驼峰转中横线或任意链接符
-        humpToAny: function (str, symbal) {
-            return str.replace(/([A-Z])/g, (symbal ? symbal : "-") + "$1").toLowerCase();
-        },
-        // 格式化日期，支持时间戳和Date实例
-        formatDate: function (date, fmt) {
-            //author: meizz,jason
-            if (date instanceof Date || typeof date === 'number') {
-                typeof date === 'number' && (date = new Date(date));
-            } else {
-                console.error("The formatDate first param must be an Date() instance or timestamp!");
-                return date;
-            }
-            let o = {
-                "m+": date.getMonth() + 1, //月份
-                "d+": date.getDate(), //日
-                "h+": date.getHours(), //小时
-                "i+": date.getMinutes(), //分
-                "s+": date.getSeconds(), //秒
-                "q+": Math.floor((date.getMonth() + 3) / 3), //季度
-                "S": date.getMilliseconds() //毫秒
-            };
-            if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (date.getFullYear() + "").substr(4 - RegExp.$1.length));
-            for (let k in o)
-                if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
-            return fmt;
-        },
-        // 当前时间戳
-        now: Date.now,
-        // Thenjs
-        Thenjs: Thenjs
-    });
-    // 生成类型字典
-    let _classTypeInitial = [false, 0, '', function () { }, [], MinQuery.now(), new RegExp(), {}, new Error(), 0]
-    MinQuery.each("Boolean Number String Function Array Date RegExp Object Error Uint8Array".split(" "), function (i, name) {
-        let _l_name = name.toLowerCase();
-        class2type["[object " + name + "]"] = _l_name;
-        typeInitial[_l_name] = _classTypeInitial[i];
-    });
+    /** 此接口用于访问未支持的wx接口，提供二次封装，并支持链式调用方式。
+     * 调用方法-分类回调形式：
+     *      常规链式方法 MinQuery.wxMethod(wxMethodName,{config: value,success(re){}}).fail(err=>{});
+     *      Thenjs方法 Thenjs(MinQuery.wxMethod(wxMethodName,{config: value})).then((cont,res)=>{cont()}).fin((cont,err,res)=>{cont(err)});
+     * 单回调形式
+     *      MinQuery.wxMethod(wxMethodName,function(re){});
+     * 单一参数型
+     *      MinQuery.wxMethod(wxMethodName,paramValue);
+     */
+    MinQuery.wxMethod = wxMethodsCallbackGenerate;
 
 
-
-    // 继承wx二次封装接口
-    // 链式注册对象
-    let wxHandlerRegister = {};
-    // 注册操作对象域
-    let asyncHandler = wxAsyncApiHandler(wxHandlerRegister);
-    // Ajax 请求方法
-    function ajaxRequest(_conf, data, call) {
-        let options = {
-            url: "",
-            data: data,
-            header: {
-                'content-type': 'application/json'
-            },
-            method: "get",
-            dataType: "json"
-        }
-        if (MinQuery.isPlainObject(_conf)) MinQuery.extend(true, options, _conf);
-        else if (MinQuery.isString(_conf)) options.url = _conf;
-        let _fail = options.fail, _success = options.success, _complete = options.complete;
-        MinQuery.extend(options, {
-            fail(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "fail", e); MinQuery.isFunction(_fail) && _fail(e) },
-            success(e) { asyncHandler.trigger(e.errMsg.split(":")[0], "success", e); MinQuery.isFunction(_success) && _success(e) },
-            complete(e) { asyncHandler.handleResponse(e, call); asyncHandler.trigger(e.errMsg.split(":")[0], "complete", e); MinQuery.isFunction(_complete) && _complete(e); }
-        })
-        // 将method值转大写
-        options.method = options.method.toUpperCase();
-        wx.request(options);
-        // 错误方法
-        return asyncHandler.register("request");
-    }
-    const wxCalls = "fail,success,complete,cancel".split(",");
-    const wxMethodsCallbackGenerate = function (methodName, options, wrapperCall, context) {
-        !context && (context = wx);
-        if (MinQuery.isString(methodName) && methodName in context) {
-            !options && (options = {});
-            let _backup = {};
-            MinQuery.each(options, (k, f) => {
-                if (wxCalls.indexOf(k) !== -1 && MinQuery.isFunction(f)) {
-                    _backup[k] = f;
-                    delete options[k];
-                }
-            })
-            let _continue_func;
-            MinQuery.extend(options, {
-                fail(e) {
-                    // 运行外部分离的场景处理函数
-                    'fail' in _backup && _backup['fail'](e);
-                },
-                success(e) {
-                    'success' in _backup && _backup['success'](e);
-                },
-                complete(e) {
-                    'complete' in _backup && _backup['complete'](e);
-                    // 支持Then.js的链式反应链
-                    let _msg = e.errMsg.split(":"), _err = null, _data;
-                    if (_msg[1] === "ok") {
-                        delete e.errMsg;
-                        _data = e;
-                    } else {
-                        _err = e;
-                    }
-                    MinQuery.isFunction(_continue_func) && _continue_func(_err, _data);
-                },
-                cancel(e) {
-                    'cancel' in _backup && _backup['cancel'](e);
-                }
-            });
-            MinQuery.isFunction(wrapperCall)
-                ? wrapperCall(context[methodName], options)
-                : (MinQuery.type(options) == 'array' ? context[methodName].apply(null, options) : context[methodName].call(null, options));
-            // 支持then.js
-            const _suport_then = function (cont) {
-                _continue_func = cont;
-            }
-            // 属性方法用于方法的链式调用
-            MinQuery.each(wxCalls, (i, m) => {
-                _suport_then[m] = (function (_m) {
-                    return function (cb) {
-                        MinQuery.isFunction(cb) && (_backup[_m] = cb);
-                        return this;
-                    }
-                })(m)
-            });
-            return _suport_then;
-        }
-    }
-    let exmp = {
-        name: 'hideToast',
-        param_def: [['delay', 'number']],
-        param_nor: [['mask', 'boolean']],
-        // 使用param_call时，传入的参数将全部传入到该回调中
-        agent_call: function (wxMethod, options) {
-            setTimeout(function () {
-                delete options.delay;
-                wxMethod(options);
-            }, options.delay ? options.delay : 0);
-        }
-    };
-
-    const registerWxMethods = function () {
-        var _wxMethodsTmp = {};
-        MinQuery.each(wxMethodsParamsConfig, function (i, _oj) {
-            if (_oj.name) {
-                _wxMethodsTmp[_oj.name] = (function (_inob) {
-                    var _param_def = _inob['param_def'], _param_nor = _inob['param_nor'], _param_all, options = {};
-                    if (MinQuery.isArray(_param_def)) {
-                        _param_all = MinQuery.isArray(_param_nor) ? _param_def.concat(_param_nor) : _param_def;
-                    } else _param_all = null;
-                    return function () {
-                        var args = slice.call(arguments), _last = args.pop(), _type = 'string';
-                        if (!MinQuery.isPlainObject(_last)) { args.push(_last); _last = null };
-                        if (args[0] && MinQuery.type(args[0]) === 'function') {
-                            options = args[0];
-                        } else if (!!_param_all) {
-                            if (_param_all.length > 0) {
-                                MinQuery.each(_param_def, function (_i, dar) {
-                                    _type = !!dar[1] ? dar[1] : 'string';
-                                    options[dar[0]] = typeInitial[_type];
-                                });
-
-                                MinQuery.each(args, function (_i, ar) {
-                                    _type = !!_param_all[_i][1] ? _param_all[_i][1] : 'string';
-                                    if (MinQuery.type(ar) === _type) {
-                                        options[_param_all[_i][0]] = ar;
-                                    } else {
-                                        console.error(`${_inob.name} method's param ${_param_all[_i][0]}`)
-                                    }
-                                });
-                            }
-                            !!_last && MinQuery.extend(options, _last);
-                        } else {
-                            options = args;
-                        }
-                        console.log(_inob.name, options, _inob['agent_call']);
-                        return wxMethodsCallbackGenerate(_inob.name, options, _inob['agent_call']);
-                    }
-                })(_oj);
-            }
-        });
-        MinQuery.extend(_wxMethodsTmp);
-    }
-
-    registerWxMethods();
-
+    MinQuery.extend(_wxMethodsPackages);
 
     MinQuery.extend({
         $window: $windowInfo,
 
         // Ajax methods
         ajax(config, data, call) {
-            if (MinQuery.isFunction(data)) {
-                call = data;
-                data = {};
+            let _conf = {};
+            // 支持简易get传值形式
+            if (MinQuery.isString(config)){
+                _conf['url'] = config;
+                if(MinQuery.isFunction(data)) _conf['success'] = data;
+                    else _conf['data'] = data;
+                if(MinQuery.isFunction(call)) _conf['success'] = call;
+            } else if (MinQuery.isPlainObject(config)) {
+                _conf = config;
             }
-            return ajaxRequest(config, data, call);
+            return _wxMethodsPackages.request(_conf);
         },
         get: function (url, data, call) {
             if (MinQuery.isFunction(data)) {
@@ -2040,7 +2030,6 @@ const rootMinQuery = function (pageName, recoveryMode) {
             return this.ajax({
                 url: url,
                 data: data,
-                method: "get",
                 success(e) { call && call(e); }
             })
         },
@@ -2365,7 +2354,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 // 检测是否已经注入过
                 if (MinQuery.pageInjected) {
                     // 如已经注入加载过，更具模式判断是否需要恢复数据到初始化状态。
-                    !!recoveryMode && MinQuery.recoveryObject($pageInitObject.data, MinQuery.pageInstance.data, true);
+                    !!recoveryMode && MinQuery.recoveryObject(MinQuery.$pageInitObject.data, MinQuery.pageInstance.data, true);
                 }
                 // 将load事件中打来的路径参数绑定到框架上
                 MinQuery.querys = e;
@@ -2407,7 +2396,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
     let eventHooks = {
         // 设置对应的元素事件到事件管理器中并给当前元素写入事件查询地址
         set: function (elem, eventkeys, method, binddata) {
-            if (!MinQuery.isUndefined(elem) && !MinQuery.isEmpty(eventkeys)) return;
+            if (MinQuery.isUndefined(elem) && !MinQuery.isEmpty(eventkeys)) return;
             let elekeys = `${elem.$selectorType}.${elem.$selectorName}`,
                 eleEventRoute = `${elekeys}.$events.${eventkeys}`,
                 eventManagerRoute = `${elekeys}.${eventkeys}`,
@@ -2614,28 +2603,27 @@ const rootMinQuery = function (pageName, recoveryMode) {
         }
     };
     // page initial object
-    let $pageInitObject = {
-        "$pageIndicator": MinQuery.pageName,
-        "$selectorType": "$page",
-        "$selectorName": "page",
-        "data": {
-            "$id": {},
-            "$cs": {},
-            "$window": MinQuery.extend($windowInfo, {
-                "$selectorType": "$window",
-                "$selectorName": "window",
-            }),
-            // page的data和attr属性
-            "$data": {},
-            "$attr": {}
-        }
-    };
-
-    // app initial object
-    let $appInitObject = {
+    MinQuery.$pageInitObject = pageName == 'app' ? {
         "$selectorType": "$app",
-        "$selectorName": "app"
-    }
+        "$selectorName": "app",
+        "data": {}
+    } : {
+            "$pageIndicator": MinQuery.pageName,
+            "$selectorType": "$page",
+            "$selectorName": "page",
+            "data": {
+                "$id": {},
+                "$cs": {},
+                "$window": MinQuery.extend($windowInfo, {
+                    "$selectorType": "$window",
+                    "$selectorName": "window",
+                }),
+                // page的data和attr属性
+                "$data": {},
+                "$attr": {}
+            }
+        };
+
     // 下一步，使pageInit继承MinQuery，抽出MinQuery不在进行重复性的初始化，使用extend方法
     // Page主选择器
     let pageInit = function (selector) {
@@ -2651,14 +2639,14 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 // 当前页面对象查询
                 if (_lowsele === "page") {
                     tar_selectorTypes.push(MinQuery.selectorsBank[_lowsele][0]);
-                    multis[0] = $pageInitObject;
+                    multis[0] = MinQuery.$pageInitObject;
                     multis.length = 1;
                 }
                 // 对APP对象查询
                 else if (_lowsele == "app") {
                     tar_selectorTypes.push(MinQuery.selectorsBank[_lowsele][0]);
                     if (MinQuery.pageName == 'app') {
-                        multis[0] = $appInitObject;
+                        multis[0] = MinQuery.$pageInitObject;
                     } else {
                         // 获取app对象实例
                         multis[0] = MinQuery.page('app')('app')[0];
@@ -2704,13 +2692,13 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 // 首先运行主体注册函数
                 let res = selector(MinQuery);
                 if (MinQuery.pageName === "app") {
-                    MinQuery.extend($appInitObject, pageInheritEventHandlers);
+                    MinQuery.extend(MinQuery.$pageInitObject, pageInheritEventHandlers);
                     // 启动当前小程序的App初始化函数
-                    App($appInitObject);
+                    App(MinQuery.$pageInitObject);
                 } else {
-                    MinQuery.extend($pageInitObject, elementEventHandlers, pageInheritEventHandlers);
+                    MinQuery.extend(MinQuery.$pageInitObject, elementEventHandlers, pageInheritEventHandlers);
                     // 启动当前页面的Page初始化函数，判断模式：恢复模式，则传入copy初始化数据；非恢复模式则传入源数据；
-                    Page(!!recoveryMode ? (MinQuery.extend(true, {}, $pageInitObject)) : $pageInitObject);
+                    Page(!!recoveryMode ? (MinQuery.extend(true, {}, MinQuery.$pageInitObject)) : MinQuery.$pageInitObject);
                 }
                 // 设置ready标示
                 MinQuery.pageInjected = true;
@@ -2725,14 +2713,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
     // 原型拷贝
     pageInit.prototype = MinQuery.prototype;
     // 样式操作
-    MinQuery.extend({
-        // 样式字符串转换器
-        jsonToStyle: $csscontrol.jsonToStyle,
-        // 样式Json转换器
-        styleToJson: $csscontrol.styleToJson,
-        // 样式继承，后面的所有样式均继承到第一个样式中，并返回继承处理后的样式字符串。支持字符串和对象形式
-        styleExtend: $csscontrol.styleExtend,
-    });
+    MinQuery.extend($csscontrol);
     // 元素框架内部访问属性集合
     MinQuery.registerInherentKey({
         "$__priv_keys__": "To cache the element private options!"
@@ -2803,13 +2784,20 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 if (ele.$selectorName === "page") {
                     _path = `${_type}.${key}`;
                     _eledt = ele.data[_type];
+                } else if (MinQuery.pageName !== 'app' && ele.$selectorName === "app") {
+                    // 仅针对page页面查询app元素进行篡改
+                    _eledt = MinQuery.page('app').$pageInitObject.data;
+                    key = _path;
                 }
                 // 执行自定义处理器
                 let result = handler.call(ele, _path, _eledt, key, value);
                 if (!!result && result.$__force_return__) return result.returns;
                 if (!!result && result.$__force_continue__) continue;
                 if (typeof key === "string") {
-                    if (value) setCurrentPageData(_path, value); else return _eledt ? MinQuery.getData(_eledt, key) : undefined;
+                    if (value) setCurrentPageData(_path, value);
+                    else {
+                        return _eledt ? MinQuery.getData(_eledt, key) : undefined;
+                    }
                 } else return undefined;
             }
             return this;
@@ -2982,7 +2970,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 }
                 let _transition = `transition: ${MinQuery.isArray(targetStyleArr) ? targetStyleArr.join(" ") : "all"} ${typeof speed === "number" ? speed : 200}ms ${getBezier(bezier)};`;
                 // 样式继承
-                aniStyles = $csscontrol.styleExtend(aniStyles, _transition);
+                aniStyles = MinQuery.styleExtend(aniStyles, _transition);
                 // 获取通过delay预先设置的延时
                 let delayTime = elem_priv.get(this, "$animation-delay") || 0;
                 // 重置animationDelay
@@ -2990,7 +2978,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 // 延时更新动画数据
                 let aniQueueMet = function () {
                     if (!!elem_priv.get(this.ele, "$animation-to-end")) {
-                        this.aniStyle = $csscontrol.styleExtend(this.aniStyle, `transition: none;`);
+                        this.aniStyle = MinQuery.styleExtend(this.aniStyle, `transition: none;`);
                     }
                     MinQuery(this.ele).css(this.aniStyle, undefined, '$cssAnimation');
                 }.bind({
@@ -3012,18 +3000,18 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 // 获取当前样式的JSON格式
                 let styleJson = !!animationKey ? ele[animationKey] : ele.$style;
                 // 清除cssAnimation残余的transition
-                styleJson = $csscontrol.styleExtend(styleJson, `transition: none;`);
+                styleJson = MinQuery.styleExtend(styleJson, `transition: none;`);
                 // 整合新的样式到已有样式
                 if (MinQuery.isString(key) && MinQuery.isString(value)) {
                     // 支持单个样式键值组写法
-                    styleJson = $csscontrol.styleExtend(styleJson, `${key}:${value}`);
+                    styleJson = MinQuery.styleExtend(styleJson, `${key}:${value}`);
                 } else if (MinQuery.isPlainObject(key) && !value) {
                     // 支持多样式对象写法
-                    styleJson = $csscontrol.styleExtend(styleJson, key);
+                    styleJson = MinQuery.styleExtend(styleJson, key);
                 } else {
                     if (MinQuery.isString(key) && key.indexOf(":") !== -1) {
                         // 支持多样式字符串写法
-                        styleJson = $csscontrol.styleExtend(styleJson, key);
+                        styleJson = MinQuery.styleExtend(styleJson, key);
                     } else {
                         // 返回一个设置的样式值
                         return styleJson ? styleJson[key] : undefined;
@@ -3040,7 +3028,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             for (; i < len;) {
                 ele = this[i++];
                 if (typeof className === "function") className = className.call(ele);
-                return $csscontrol.hasClass(ele[!hover ? "$class" : "$hoverClass"], className) !== -1;
+                return MinQuery.hasClass(ele[!hover ? "$class" : "$hoverClass"], className) !== -1;
             }
         },
         // 添加一个不存在的样式
@@ -3048,7 +3036,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             this.each(function () {
                 if (typeof className === "function") className = className.call(this);
                 if (!MinQuery(this).hasClass(className)) {
-                    className = $csscontrol.addClass(this.$class, className);
+                    className = MinQuery.addClass(this.$class, className);
                     setCurrentPageData(`${this.$selectorType}.${this.$selectorName}.${!hover ? "$class" : "$hoverClass"}`, className);
                 }
             })
@@ -3058,7 +3046,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
         removeClass(className, hover) {
             this.each(function () {
                 if (typeof className === "function") className = className.call(this);
-                className = $csscontrol.removeClass(this.$class, className);
+                className = MinQuery.removeClass(this.$class, className);
                 setCurrentPageData(`${this.$selectorType}.${this.$selectorName}.${!hover ? "$class" : "$hoverClass"}`, className);
             });
             return this;
@@ -3140,7 +3128,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 if (len > 1) cobj[ele.$selectorName] = context;
                 else return context;
             }
-            if (MinQuery.isEmptyObject(cobj))
+            if (_$.isEmptyObject(cobj))
                 return this;
             else return cobj;
         },
@@ -3154,7 +3142,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 if (len > 1) cobj[ele.$selectorName] = context;
                 else return context;
             }
-            if (MinQuery.isEmptyObject(cobj))
+            if (_$.isEmptyObject(cobj))
                 return this;
             else return cobj;
         },
@@ -3169,7 +3157,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 if (len > 1) cobj[ele.$selectorName] = context;
                 else return context;
             }
-            if (MinQuery.isEmptyObject(cobj))
+            if (_$.isEmptyObject(cobj))
                 return this;
             else return cobj;
         },
@@ -3183,16 +3171,16 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 if (len > 1) cobj[ele.$selectorName] = context;
                 else return context;
             }
-            if (MinQuery.isEmptyObject(cobj))
+            if (_$.isEmptyObject(cobj))
                 return this;
             else return cobj;
         }
     });
     // 创建独立canvas画布对象
     MinQuery.extend({
-        canvas(canvasTag, contextMovementCall) {
-            if (!MinQuery.isString(canvasTag)) return;
-            let priv_context_path = `$canvas-context-${canvasTag}`;
+        canvas(canvasId, contextMovementCall) {
+            if (!MinQuery.isString(canvasId)) return;
+            let priv_context_path = `$canvas-context-${canvasId}`;
             let current_context = elem_priv.get(this, priv_context_path, wx.createContext());
             if (MinQuery.isFunction(contextMovementCall)) {
                 contextMovementCall.call(current_context, current_context);
@@ -3299,12 +3287,12 @@ const rootMinQuery = function (pageName, recoveryMode) {
             returns.__length__ = i;
             returns.__paths__.push(fk);
         }
-        if (!MinQuery.isEmptyObject(keyString)) {
+        if (!_$.isEmptyObject(keyString)) {
             // 如果存在page对象则将数据绑定到page对象上
             // 小程序原型方法
             !!MinQuery.pageInstance && MinQuery.pageInstance.setData(keyString);
             // 同步更新框架上的数据
-            MinQuery.dataProcessor($pageInitObject.data, keyString);
+            MinQuery.dataProcessor(MinQuery.$pageInitObject.data, keyString);
         }
         // 如果
         stayFormat !== true && returns.__length__ === 1 && (returns = returns[returns.__paths__[0]]);
@@ -3319,7 +3307,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
         getData(queryObj, keys) {
             if (typeof queryObj === "string") {
                 keys = queryObj;
-                queryObj = $pageInitObject.data;
+                queryObj = MinQuery.$pageInitObject.data;
             };
             return MinQuery.dataProcessor(queryObj, keys);
         },
