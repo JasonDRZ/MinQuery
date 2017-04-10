@@ -76,11 +76,19 @@ function task(arg, cont) { // 模拟异步任务
 var userName = $.setData({ "userName": "JasonDRZ" });
 var _page = $("page");
 $((_$) => {
+  // 打组形式调用
+  let _groups = $("#group_1,#group_2,#group_3");
+  _groups.on("tap",function(e){
+    _groups.css("color",'#444');
+    $(this).css("color",'red');
+  })
+
+
   $.$on("user-login", function (e) {
     console.log(e)
   });
   
-  $.$watch("user", function (n, o, p) {
+  $.watch("user", function (n, o, p) {
     console.info(`Got userName value changes.New: ${n},Old: ${o}`, p);
   }, true)
   // console.log(_$(".name,#elements"));
@@ -88,19 +96,19 @@ $((_$) => {
   var $coustom = $("$coustomOne");
   var canvas = $("#myCanvas");
   var _window = $("window").get(0);
-  var canvasData = //$.canvas("customCanvas")
+  // var canvasData = //$.canvas("customCanvas")
 
-    canvas.canvas(function () {
-      this.setFillStyle('red')
-      this.fillRect(10, 10, 150, 75)
-    });
+    
   // setInterval(function(){
   canvas.on("touchmove", function (e) {
-    console.log(e);
+    console.log("canvas move event!!!")
+    console.log($(this).canvas());
     $(this).canvas(function () {
       this.setFillStyle('red')
       this.fillRect(e.touches[0].x, e.touches[0].y, 150, 75)
     })
+  }).on('error',function(e){
+    console.error(e);
   });
   // },13);
 var __video = $("#myVideo").on("pause",function(e){
@@ -125,7 +133,7 @@ var __video = $("#myVideo").on("pause",function(e){
   }},function(res){
     console.info("Trigger end call",res)
   }).data('userInfo'));
-  console.log("video tap:",e)
+  console.log("video tap:",__video.pause());
 }).video()
 
 
@@ -133,6 +141,8 @@ var __video = $("#myVideo").on("pause",function(e){
   $.get('https://minapp.ieyuan.com/jwhudong/api.php', {
     op:'content',module:'comm',catid:67,page:1,state:0
   },(res, state) => {
+    
+  }).success((res, state) => {
     console.log(res, state);
     console.info($.$trigger('getUserInfo',function(i){
       // 通过dataAccess方法获取到globalData，的hook函数
@@ -140,15 +150,9 @@ var __video = $("#myVideo").on("pause",function(e){
       console.log(globals.get());
       console.info("I have success getUserInfo!!!",i)
     }));
-  }).success((res, state) => {
-    console.log(res);
   }).fail((res, state) => {
     console.log(res);
   });
-  var ctx = canvas.canvas(true);
-  // ctx.setFillStyle('red')
-  // ctx.fillRect(10, 10, 150, 75)
-  // ctx.draw()
 
 
   var secondSelector = $(".secondClassSelector");
@@ -174,7 +178,11 @@ var __video = $("#myVideo").on("pause",function(e){
   })
   _page.on("ready", "ready to go", function (e) {
     console.info("Page ready event has a custom handler!", e)
-
+    canvas.canvas(function () {
+      this.setFillStyle('red')
+      this.fillRect(10, 10, 150, 75)
+      console.info('Draw canvas!',this)
+    });
     // $.showModal("我正在加载！","莫泰的内容！！",true,"Canc","#5ee2c4","Conf","#1abee2",{success: function(){
     //   console.info("我已经加载成功了！！！！！！")
     // }})

@@ -21,18 +21,6 @@ $((_$) => {
   // 暂存查询实例
   var _page = $("page");
   
-  var canvas = $("#myCanvas");
-  // 使用canvas封装接口时，让你不需要调用小程序canvas创建上下文的接口，传入匿名函数时可以不书写ctx.draw()方法，框架将自动补全
-  canvas.canvas(function(){
-    this.setFillStyle('red')
-    this.fillRect(10, 10, 150, 75)
-  })
-  // 你也可以直接暂存canvas实例，通过传入一个布尔类型
-  var ctx = canvas.canvas(true);
-  // 暂存的ctx对象你可以在当前域的任何地方进行调用，不过必须在绘制的最后使用ctx.draw()方法
-    // ctx.setFillStyle('red')
-    // ctx.fillRect(10, 10, 150, 75)
-    // ctx.draw()
   // 创建自定义封装对象：如果传入一个非框架内默认识别的查询器名称，框架将直接使用这个名称在data根对象上创建MQ实例，让你可以对这个对象使用近乎所有的实例方法
   var _custom = $("customOne");
   _custom.on("updata",{name: "_custom",gender: 1},function(e) {

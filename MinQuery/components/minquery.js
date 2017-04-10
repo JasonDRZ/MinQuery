@@ -789,8 +789,8 @@ let _$ = {
     },
     // 当前时间戳
     now: Date.now,
-    // Thenjs
-    Thenjs: Thenjs
+    // Thenjs挂载到when对象上
+    when: Thenjs
 }, _$_proto_ = {
 
 };
@@ -2012,11 +2012,11 @@ const rootMinQuery = function (pageName, recoveryMode) {
         ajax(config, data, call) {
             let _conf = {};
             // 支持简易get传值形式
-            if (MinQuery.isString(config)){
+            if (MinQuery.isString(config)) {
                 _conf['url'] = config;
-                if(MinQuery.isFunction(data)) _conf['success'] = data;
-                    else _conf['data'] = data;
-                if(MinQuery.isFunction(call)) _conf['success'] = call;
+                if (MinQuery.isFunction(data)) _conf['success'] = data;
+                else _conf['data'] = data;
+                if (MinQuery.isFunction(call)) _conf['success'] = call;
             } else if (MinQuery.isPlainObject(config)) {
                 _conf = config;
             }
@@ -2234,7 +2234,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                             // 触发根节点绑定事件
                             if (_type in this && MinQuery.isFunction(this[_type])) {
                                 res = this[_type](data);
-                                MinQuery.isFunction(triggerCall) && triggerCall({"$data": data,"$res": res});
+                                MinQuery.isFunction(triggerCall) && triggerCall({ "$data": data, "$res": res });
                             };
                         }
                     } else {
@@ -2243,7 +2243,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                         // 触发传递数据，并接收返回数据
                         res = eventHooks.get(eroute, {}, data);
                         // 执行callback
-                        MinQuery.isFunction(triggerCall) && triggerCall({"$data": data,"$res": res});
+                        MinQuery.isFunction(triggerCall) && triggerCall({ "$data": data, "$res": res });
                     }
                 })
             }
@@ -2503,6 +2503,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
     let elementEventHandlers = {
         // 处理bind事件
         "$bind": function (e) {
+            console.log(e);
             findElementEventHandler(e, "bind");
         },
         // 处理catch事件
@@ -2518,13 +2519,16 @@ const rootMinQuery = function (pageName, recoveryMode) {
         let cur_id = MinQuery.getData(e, 'currentTarget.id'),
             tar_id = MinQuery.getData(e, 'target.id'),
             cur_class = MinQuery.getData(e, 'currentTarget.dataset.mClass'),
-            tar_class = MinQuery.getData(e, 'target.dataset.mClass');
+            tar_class = MinQuery.getData(e, 'target.dataset.mClass'),
+            // 用于canvas画布的id选中
+            tar_tar = MinQuery.getData(e, 'target.target');
         let tid = cur_id
             ? cur_id
             : tar_id,
             tcs = cur_class
                 ? cur_class
                 : tar_class;
+        tid = tid ? tid : tar_tar;
         // event对象扩展
         if (e.type === "submit") MinQuery.extend(e, {
             // 设置访问formData快捷接口
@@ -2721,10 +2725,12 @@ const rootMinQuery = function (pageName, recoveryMode) {
     // 用于操作元素的私有属性方法，此设置不参与视图层更新操作
     let elem_priv = {
         priv_keys: "$__priv_keys__",
+        // 获取时，允许传入一个预设值，当获取的数据不存在的时候进行预设。
         get(ele, _type, value, arrPush) {
             let cur_priv = MinQuery.getData(ele, `${this.priv_keys}.${_type}`);
             return !!cur_priv ? cur_priv : !!value ? this.set(ele, _type, value, arrPush) : undefined;
         },
+        // 设置数据并返回设置的数据
         set(ele, _type, value, arrPush) {
             if (ele) {
                 !ele[this.priv_keys] && (ele[this.priv_keys] = {});
@@ -2734,9 +2740,10 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 } else {
                     ele[this.priv_keys][_type] = value;
                 }
-                return ele[this.priv_keys][_type];
+                return value;
             }
         },
+        // 访问或设置数据
         access(ele, _type, key, value) {
             if (ele) {
                 let curPriv = !ele[this.priv_keys] ? (ele[this.priv_keys] = {}) : ele[this.priv_keys];
@@ -3104,12 +3111,15 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 ele = this[i++];
                 let cid = ele.$selectorName,
                     callIsFunction = MinQuery.isFunction(operationCall),
-                    context,
-                    isPrevContext = !callIsFunction && operationCall.hasOwnProperty('canvasId') && operationCall.hasOwnProperty("actions") && operationCall.hasOwnProperty("path");
+                    // 预先获取一下当前元素的canvas对象
+                    context = elem_priv.get(ele, "$canvas-context"),
+                    // 验证是否为canvas对象
+                    isPrevContext = !!operationCall && !callIsFunction && operationCall.hasOwnProperty('canvasId') && operationCall.hasOwnProperty("actions") && operationCall.hasOwnProperty("path");
                 // 当创建了canvas动作时
                 if (isPrevContext) {
                     // 当只创建了canvas上下文时，直接返回上下文
                     context = elem_priv.get(ele, "$canvas-context", operationCall);
+                    // 如果存在额外的动作操作函数，则执行
                     if (MinQuery.isFunction(extraMovementCall)) extraMovementCall.call(context, context);
                     if (!!context.canvasId) context.draw();
                     else wx.drawCanvas({
@@ -3118,7 +3128,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                     });
                 } else {
                     // 当通过原型方法创建时，则开始绘制
-                    context = elem_priv.get(ele, "$canvas-context", wx.createCanvasContext(cid));
+                    context = !!context ? context : elem_priv.get(ele, "$canvas-context", wx.createCanvasContext(cid));
                     if (callIsFunction) {
                         operationCall.call(context, context);
                         context.draw();
@@ -3179,44 +3189,38 @@ const rootMinQuery = function (pageName, recoveryMode) {
     // 创建独立canvas画布对象
     MinQuery.extend({
         canvas(canvasId, contextMovementCall) {
-            if (!MinQuery.isString(canvasId)) return;
-            let priv_context_path = `$canvas-context-${canvasId}`;
-            let current_context = elem_priv.get(this, priv_context_path, wx.createContext());
+            // 支持无id创建canvas上下文
+            if(MinQuery.isFunction(canvasId)) {
+                contextMovementCall = canvasId;canvasId = null;
+            }
+            let priv_context_path = `$canvas-context-${!!canvasId ? canvasId : MinQuery.now()}`;
+            let current_context = elem_priv.get(this, priv_context_path, !!canvasId ? wx.createCanvasContext(canvasId) : wx.createContext());
             if (MinQuery.isFunction(contextMovementCall)) {
                 contextMovementCall.call(current_context, current_context);
             }
             return current_context;
         },
         video(videoId) {
+            if(!MinQuery.isString(videoId)) return;
             let context = elem_priv.get(this, "$video-context", wx.createVideoContext(videoId));
-            return {
-                play: context.play,
-                pause: context.pause,
-                seek: context.seek,
-                send(message) {
-                    context.sendDanmu({
-                        text: message,
-                        color: MinQuery.randomColor()
-                    })
-                }
-            }
+            context.send = function (message) {
+                this.sendDanmu({
+                    text: message,
+                    color: MinQuery.randomColor()
+                })
+            };
+            return context
         },
         audio(audioId) {
+            if(!MinQuery.isString(audioId)) return;
             let context = elem_priv.get(this, "$audio-context", wx.createAudioContext(audioId));
-            return {
-                play: context.play,
-                pause: context.pause,
-                seek: context.seek,
-                start: context.seek(0),
-                setSrc: context.setSrc
+            context.start = function(){
+                this.seek(0);
             }
+            return context;
         },
         Map(mapId) {
-            let context = elem_priv.get(this, "$Map-context", wx.createMapContext(mapId));
-            return {
-                pgetCenterLocationlay: context.getCenterLocation,
-                moveToLocation: context.moveToLocation
-            }
+            return elem_priv.get(this, "$Map-context", wx.createMapContext(mapId));
         },
         randomColor() {
             let rgb = [], i = 0;
@@ -3288,68 +3292,68 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 },
                 // 数组操作
                 // 如果当前或某一子字段为数组形式，则可以使用此接口进行项目添加
-                append(key,value){
-                    if(!value) { 
+                append(key, value) {
+                    if (!value) {
                         value = key; key = '';
-                    }else{
+                    } else {
                         key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
                     }
-                    let _old_val,_path = this.__path__ + key;
+                    let _old_val, _path = this.__path__ + key;
                     _old_val = MinQuery.getData(_path);
-                    if(MinQuery.isArray(_old_val)) {
+                    if (MinQuery.isArray(_old_val)) {
                         _old_val.push(value);
                         setCurrentPageData(_path, _old_val);
                     }
                 },
-                prepend(key,value){
-                    if(!value) { 
+                prepend(key, value) {
+                    if (!value) {
                         value = key; key = '';
-                    }else{
+                    } else {
                         key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
                     }
-                    let _old_val,_path = this.__path__ + key;
+                    let _old_val, _path = this.__path__ + key;
                     _old_val = MinQuery.getData(_path);
-                    if(MinQuery.isArray(_old_val)) {
+                    if (MinQuery.isArray(_old_val)) {
                         _old_val.unshift(value);
-                    setCurrentPageData(_path, _old_val);
+                        setCurrentPageData(_path, _old_val);
                     }
                 },
                 // 在数组的某一个索引后添加元素
-                after(key,index,value){
-                    if(MinQuery.type(key) === 'number') {value = index;index = key;key = null}
-                    let _old_val,_path = this.__path__ + (!!key ? `.${key}` : "");
+                after(key, index, value) {
+                    if (MinQuery.type(key) === 'number') { value = index; index = key; key = null }
+                    let _old_val, _path = this.__path__ + (!!key ? `.${key}` : "");
                     _old_val = MinQuery.getData(_path);
                     // 仅对数组类型数据进行修改尝试
-                    if(MinQuery.isArray(_old_val)) {
-                        _old_val.splice(index + 1,0,value);
+                    if (MinQuery.isArray(_old_val)) {
+                        _old_val.splice(index + 1, 0, value);
                         setCurrentPageData(_path, _old_val);
                     }
                 },
                 // 在数组的某一个索引前添加元素
-                before(key,index,value){
-                    if(MinQuery.type(key) === 'number') {value = index;index = key;key = null}
-                    let _old_val,_path = this.__path__ + (!!key ? `.${key}` : "");
+                before(key, index, value) {
+                    if (MinQuery.type(key) === 'number') { value = index; index = key; key = null }
+                    let _old_val, _path = this.__path__ + (!!key ? `.${key}` : "");
                     _old_val = MinQuery.getData(_path);
                     // 仅对数组类型数据进行修改尝试
-                    if(MinQuery.isArray(_old_val)) {
-                        _old_val.splice(index,0,value);
+                    if (MinQuery.isArray(_old_val)) {
+                        _old_val.splice(index, 0, value);
                         setCurrentPageData(_path, _old_val);
                     }
                 },
                 // 在删除某个数组中的指定元素
-                remove(key,index){
-                    if(MinQuery.type(key) === 'number') {index = key;key = null}
-                    let _old_val,_path = this.__path__ + (!!key ? `.${key}` : "");
+                remove(key, index) {
+                    if (MinQuery.type(key) === 'number') { index = key; key = null }
+                    let _old_val, _path = this.__path__ + (!!key ? `.${key}` : "");
                     _old_val = MinQuery.getData(_path);
                     // 仅对数组类型数据进行修改尝试
-                    if(MinQuery.isArray(_old_val)) {
-                        _old_val.splice(index,1);
+                    if (MinQuery.isArray(_old_val)) {
+                        _old_val.splice(index, 1);
                         setCurrentPageData(_path, _old_val);
                     }
                 },
                 // 将当前或某一字段设置为null，或指定的值
-                clear(key,_type){
-                    if(!!key && !_type) { _type = key; key = null};
+                clear(key, _type) {
+                    if (!!key && !_type) { _type = key; key = null };
                     setCurrentPageData(this.__path__ + (!!key ? `.${key}` : ""), _type ? _type : null);
                 }
             }
@@ -3378,7 +3382,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 keys = queryObj;
                 queryObj = MinQuery.$pageInitObject.data;
             };
-            return  MinQuery.dataProcessor(queryObj, keys);
+            return MinQuery.dataProcessor(queryObj, keys);
         },
         // 设置键值数据，保证Page数据与框架数据的同步性
         // 此接口主要供给插件访问接口
@@ -3397,7 +3401,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
         /** 用于检测数据变化，接收一个查询key组成的字符串和一个改变触发匿名处理函数;
          *  @param: fuzzy 参数为可选参数,类型为Boolean。设置为true时则对key字符串进行模糊匹配，而非绝对匹配
          */
-        $watch(watchDataKey, watchCall, fuzzy) {
+        watch(watchDataKey, watchCall, fuzzy) {
             if (!watchDataKey) return;
             if (MinQuery.isPlainObject(watchDataKey) && watchDataKey.__path__) {
                 watchDataKey = watchDataKey.__path__;

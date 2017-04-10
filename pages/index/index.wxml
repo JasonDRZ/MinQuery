@@ -26,3 +26,4 @@
   </swiper>
 </view>
 
+<canvas canvas-id="myCanvas1" id='myCanvas1' disable-scroll="{{true}}" style="border: 1px solid;" bindtouchmove="onCanvasMove"/>

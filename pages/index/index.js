@@ -1,6 +1,7 @@
 //index.js
 //获取应用实例
-var app = getApp()
+var app = getApp();
+const ctx = wx.createCanvasContext('myCanvas1')
 Page({
   data: {
     banner: {
@@ -23,7 +24,17 @@ Page({
       duration: 1000
     }
   },
+  onCanvasMove(e){
+    console.log(e);
+      ctx.setFillStyle('red');
+      ctx.fillRect(e.touches[0].x, e.touches[0].y, 150, 75);
+      ctx.draw();
+  },
   onReady(){
+      
+      ctx.setFillStyle('red')
+      ctx.fillRect(10, 10, 150, 75)
+      ctx.draw()
     console.log(__wxRoute)
   },
   onChange(e){

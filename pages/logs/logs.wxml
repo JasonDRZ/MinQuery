@@ -8,8 +8,13 @@
   <view class="log-item {{$cs.secondClassSelector.$class}}" style="{{$cs.secondClassSelector.$style}}{{$cs.secondClassSelector.$cssAnimation}}" id="secondID1" data-m-class="secondClassSelector" bindtap="$bind" bindtouchstart="$bind"><view>测试事件3</view>{{userName}}</view>
   <view class="log-item" id="secondID2" data-m-event="page,customFunc" bindtap="$bind">测试事件4</view>
   <view class="log-item" id="secondID3" data-m-class="cs001" bindtap="$bind">测试事件5</view>
+
+  <view class="log-item" id="group_1" style="{{$id.group_1.$style}}" bindtap="$bind">测试组-1</view>
+  <view class="log-item" id="group_2" style="{{$id.group_2.$style}}" bindtap="$bind">测试组-1</view>
+  <view class="log-item" id="group_3" style="{{$id.group_3.$style}}" bindtap="$bind">测试组-1</view>
+
   <view style="width: 50px;height: 50px;background-color: red;" animation="{{$coustomOne.$animation}}"></view>
-  <canvas canvas-id="myCanvas" id='myCanvas' disable-scroll="{{true}}" style="border: 1px solid;" bindtouchmove="$bind"/>
+  <canvas canvas-id="myCanvas" id='myCanvas' disable-scroll="{{true}}" style="border: 1px solid;" bindtouchmove="$bind" binderror="$bind"/>
   <checkbox-group bindchange="$event">
   <label class="checkbox" wx:for="{{items}}">
     <checkbox value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
