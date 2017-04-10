@@ -8,11 +8,16 @@ var $ = require("MinQuery/index").load("app");
 $(()=>{
   var app = $("app");
   var globalData = $.setData('globalData',{});
+  var arrayData = $.setData("items",[]);
+  arrayData.append("第一个item");
+  arrayData.prepend("prepend的item");
+  arrayData.after(1,"after insert");
+  arrayData.before(0,"before insert");
   app.on('launch',function(){
     console.info("App has onLaunched!!!!!!!!!!!!!!!")
   }).bind('userLogin',function(cb){
     console.log(cb);
-    $.$call(cb,"尼玛，传过来了！！")
+    $.$call(cb.call,"尼玛，传过来了！！")
     $.showLoading('登录中。。。。');
     $.hideLoading(3000);
   }).data("userInfo","用户信息！！！");

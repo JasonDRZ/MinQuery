@@ -2226,15 +2226,15 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 let eroute, res;
                 let self = this;
                 this.each(function () {
-                    // 禁止触发Page固有事件
                     if (this.$selectorName === "page" || this.$selectorName === "app") {
+                        // 禁止触发Page固有事件
                         if (_type in MinQuery.pageInheritEventKVPair) {
                             console.error(`You can not trigger an ${this.$selectorName} inherent event named [${_type}]!`);
-                            return;
                         } else {
+                            // 触发根节点绑定事件
                             if (_type in this && MinQuery.isFunction(this[_type])) {
-                                this[_type](data);
-                                return;
+                                res = this[_type](data);
+                                MinQuery.isFunction(triggerCall) && triggerCall(res);
                             };
                         }
                     } else {
@@ -3278,10 +3278,69 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 get(key) {
                     return MinQuery.getData(this.__path__ + (!!key ? `.${key}` : ""));
                 },
+                // 对象操作
                 // 修改当前对象中对应的键值
                 set(key, value) {
                     if (!value) { value = key; key = null }
                     setCurrentPageData(this.__path__ + (!!key ? `.${key}` : ""), value);
+                },
+                // 数组操作
+                // 如果当前或某一子字段为数组形式，则可以使用此接口进行项目添加
+                append(key,value){
+                    if(!value) { value = key; key = null};
+                    let _old_val,_path = this.__path__ + (!!key ? `.${key}` : "");
+                    _old_val = MinQuery.getData(_path);
+                    if(MinQuery.isArray(_old_val)) {
+                        _old_val.push(value);
+                        setCurrentPageData(_path, _old_val);
+                    }
+                },
+                prepend(key,value){
+                    if(!value) { value = key; key = null};
+                    let _old_val,_path = this.__path__ + (!!key ? `.${key}` : "");
+                    _old_val = MinQuery.getData(_path);
+                    if(MinQuery.isArray(_old_val)) {
+                        _old_val.unshift(value);
+                    setCurrentPageData(_path, _old_val);
+                    }
+                },
+                // 在数组的某一个索引后添加元素
+                after(key,index,value){
+                    if(MinQuery.type(key) === 'number') {value = index;index = key;key = null}
+                    let _old_val,_path = this.__path__ + (!!key ? `.${key}` : "");
+                    _old_val = MinQuery.getData(_path);
+                    // 仅对数组类型数据进行修改尝试
+                    if(MinQuery.isArray(_old_val)) {
+                        _old_val.splice(index + 1,0,value);
+                        setCurrentPageData(_path, _old_val);
+                    }
+                },
+                // 在数组的某一个索引前添加元素
+                before(key,index,value){
+                    if(MinQuery.type(key) === 'number') {value = index;index = key;key = null}
+                    let _old_val,_path = this.__path__ + (!!key ? `.${key}` : "");
+                    _old_val = MinQuery.getData(_path);
+                    // 仅对数组类型数据进行修改尝试
+                    if(MinQuery.isArray(_old_val)) {
+                        _old_val.splice(index,0,value);
+                        setCurrentPageData(_path, _old_val);
+                    }
+                },
+                // 在删除某个数组中的指定元素
+                remove(key,index){
+                    if(MinQuery.type(key) === 'number') {index = key;key = null}
+                    let _old_val,_path = this.__path__ + (!!key ? `.${key}` : "");
+                    _old_val = MinQuery.getData(_path);
+                    // 仅对数组类型数据进行修改尝试
+                    if(MinQuery.isArray(_old_val)) {
+                        _old_val.splice(index,1);
+                        setCurrentPageData(_path, _old_val);
+                    }
+                },
+                // 将当前或某一字段设置为null，或指定的值
+                clear(key,_type){
+                    if(!!key && !_type) { _type = key; key = null};
+                    setCurrentPageData(this.__path__ + (!!key ? `.${key}` : ""), _type ? _type : null);
                 }
             }
             returns.__length__ = i;
@@ -3309,7 +3368,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 keys = queryObj;
                 queryObj = MinQuery.$pageInitObject.data;
             };
-            return MinQuery.dataProcessor(queryObj, keys);
+            return  MinQuery.dataProcessor(queryObj, keys);
         },
         // 设置键值数据，保证Page数据与框架数据的同步性
         // 此接口主要供给插件访问接口

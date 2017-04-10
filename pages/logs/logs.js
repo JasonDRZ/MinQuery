@@ -118,10 +118,11 @@ var __video = $("#myVideo").on("pause",function(e){
   }
 })
 }).on("tap",function(e){
-  console.info($('app').trigger('userLogin',function(res){
+  console.info($('app').trigger('userLogin',{call: function(res){
     console.log(res);
+    console.info(this.getData("items"))
     console.info(this.getData('globalData'))
-  }).data('userInfo'));
+  }}).data('userInfo'));
   console.log("video tap:",e)
 }).video()
 
