@@ -2234,7 +2234,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                             // 触发根节点绑定事件
                             if (_type in this && MinQuery.isFunction(this[_type])) {
                                 res = this[_type](data);
-                                MinQuery.isFunction(triggerCall) && triggerCall(res);
+                                MinQuery.isFunction(triggerCall) && triggerCall({"$data": data,"$res": res});
                             };
                         }
                     } else {
@@ -2243,7 +2243,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                         // 触发传递数据，并接收返回数据
                         res = eventHooks.get(eroute, {}, data);
                         // 执行callback
-                        MinQuery.isFunction(triggerCall) && triggerCall(res);
+                        MinQuery.isFunction(triggerCall) && triggerCall({"$data": data,"$res": res});
                     }
                 })
             }
@@ -3276,19 +3276,25 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 __path__: k,
                 // 获取
                 get(key) {
-                    return MinQuery.getData(this.__path__ + (!!key ? `.${key}` : ""));
+                    key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
+                    return MinQuery.getData(this.__path__ + key);
                 },
                 // 对象操作
                 // 修改当前对象中对应的键值
                 set(key, value) {
                     if (!value) { value = key; key = null }
-                    setCurrentPageData(this.__path__ + (!!key ? `.${key}` : ""), value);
+                    key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
+                    setCurrentPageData(this.__path__ + key, value);
                 },
                 // 数组操作
                 // 如果当前或某一子字段为数组形式，则可以使用此接口进行项目添加
                 append(key,value){
-                    if(!value) { value = key; key = null};
-                    let _old_val,_path = this.__path__ + (!!key ? `.${key}` : "");
+                    if(!value) { 
+                        value = key; key = '';
+                    }else{
+                        key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
+                    }
+                    let _old_val,_path = this.__path__ + key;
                     _old_val = MinQuery.getData(_path);
                     if(MinQuery.isArray(_old_val)) {
                         _old_val.push(value);
@@ -3296,8 +3302,12 @@ const rootMinQuery = function (pageName, recoveryMode) {
                     }
                 },
                 prepend(key,value){
-                    if(!value) { value = key; key = null};
-                    let _old_val,_path = this.__path__ + (!!key ? `.${key}` : "");
+                    if(!value) { 
+                        value = key; key = '';
+                    }else{
+                        key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
+                    }
+                    let _old_val,_path = this.__path__ + key;
                     _old_val = MinQuery.getData(_path);
                     if(MinQuery.isArray(_old_val)) {
                         _old_val.unshift(value);

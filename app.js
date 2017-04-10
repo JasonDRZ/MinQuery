@@ -8,8 +8,9 @@ var $ = require("MinQuery/index").load("app");
 $(()=>{
   var app = $("app");
   var globalData = $.setData('globalData',{});
-  var arrayData = $.setData("items",[]);
+  var arrayData = $.setData("items",[['inner1']]);
   arrayData.append("第一个item");
+  arrayData.append(0,"第2个inner");
   arrayData.prepend("prepend的item");
   arrayData.after(1,"after insert");
   arrayData.before(0,"before insert");
