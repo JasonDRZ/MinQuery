@@ -376,3 +376,9 @@ JS中对元素绑定的事件必须存在同类型的元素事件绑定方法，
 每个绑定的事件处理函数在元素触发的时候都会有`event`对象的参数传入匿名函数，类似小程序原生的事件对象，只不过这里做了一些简易的封装处理。
 
 >注意：`bind()`对元素的事件绑定的处理机制与`on()`相同，但在处理page选择器对象的方式上与`on()`的行为是不同的，这个后面会讲到。
+
+
+# License
+MinQuery is licensed under the [MIT](href "https://github.com/JasonDRZ/MinQuery/blob/master/LICENSE") license.
+
+Copyright (c) 2017 JasonD
