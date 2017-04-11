@@ -3,7 +3,7 @@
 MinQuery是一款针对WeChat-Min-App的一套轻量级代码工具库。旨在简化小程序开发管理流程，降低开发门槛，提高开发效率。
 
 ## API文档
-[中文API文档](href "https://github.com/JasonDRZ/MinQuery/blob/master/MinQuery-API")
+[中文API文档](href "https://github.com/JasonDRZ/MinQuery/blob/master/MinQuery-API.md")
 
 ## 主要特性
 1. 针对已有的小程序原生API进行简单二次封装，支持更多对原生API的简洁调用方式及链式调用方式。
