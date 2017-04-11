@@ -20,13 +20,13 @@ MinQuery是一款针对WeChat-Min-App的一套轻量级代码工具库。旨在�
 项目根目录分别存在两个MinQuery文件，分别是源码版和发布版
 
 源码版：Size 132kb
-```js
- /MinQuery.1.0.2.js
+```text
+ MinQuery.1.0.2.js
 ```
 
 发布版：Size 44kb
-```js
- /MinQuery.1.0.2.min.js
+```text
+ MinQuery.1.0.2.min.js
 ```
 发布版经过代码压缩工具压缩机Babel ES版本降级处理，整体体积变得更加适合开发使用，如果仅为开发，建议使用发布版代码。如需做个性修改，请使用源码版。
 
