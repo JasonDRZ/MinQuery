@@ -1060,26 +1060,23 @@ _$.each(wxMethodsParamsConfig, function (i, _oj) {
             } else _param_all = null;
             return function () {
                 // 返回的封装函数
-                let args = slice.call(arguments), _last = args.pop(), _type = 'string', _type_match = false, _preset = '', _cur_param;
-                if (!_$.isPlainObject(_last)) { args.push(_last); _last = null };
-                // 如果是传入的参数中第一个为函数，则直接将函数传入方法，不做处理
-                if (args[0] && _$.type(args[0]) === 'function') {
-                    options = args[0];
-                } else if (_$.isArray(_param_all)) {
-                    // 如果存在参数配置，进行配置设置
-                    if (_param_all.length > 0) {
-                        // 预制参数处理，所有参数字段均可预设值
-                        _$.each(_param_all, function (_i, dar) {
-                            _cur_param = _param_all[_i];
-                            _preset = _cur_param[2];
-                            // 仅设置有预制项的字段
-                            if (!_$.isUndefined(_preset)) options[dar[0]] = _preset;
-                        });
-
-                        // 已经输入的参数处理
-                        _$.each(args, function (_i, ar) {
-                            _type_match = false;
-                            _cur_param = _param_all[_i];
+                let args = slice.call(arguments), _has_config = _$.isArray(_param_all), _type = 'string', _type_match = false, _preset = '', _cur_param, _first = args[0];
+                // 如果存在配置，则表明此项一定是异步回调形式，则进行预设参数进行继承
+                if (_has_config) {
+                    // 优先进行配置项预设
+                    _$.each(_param_all, function (_i, dar) {
+                        _cur_param = _param_all[_i];
+                        _preset = _cur_param[2];
+                        // 仅设置有预制项的字段
+                        if (!_$.isUndefined(_preset)) options[dar[0]] = _preset;
+                    });
+                    if(_$.isPlainObject(_first)){
+                        $extend(options, _first);
+                    } else _$.each(args, function (_i, ar) {
+                        _type_match = false;
+                        _cur_param = _param_all[_i];
+                        // 存在配置预设项则进行验证，不存在，则忽略此字段
+                        if (!!_cur_param) {
                             _type = !!_cur_param[1] ? _cur_param[1] : 'string';
                             _type = _type.split("|");
                             // 判断是否符合多个类型中的某一个类型
@@ -1091,13 +1088,9 @@ _$.each(wxMethodsParamsConfig, function (i, _oj) {
                             } else {
                                 console.error(`${_inob.name} method's param ${_cur_param[0]}`)
                             }
-                        });
-                    }
-                    // 如果最后一项为plain object，将做为参数进行集成
-                    // 、、、、、、、这会导致如果最后一个是某个参数的对象形式值时，会被误认为是参数字段对象集、、、、、
-                    !!_last && $extend(options, _last);
+                        } else return false;
+                    });
                 } else {
-                    // 其他情况直接apply参数
                     options = args;
                 }
                 return wxMethodsCallbackGenerate(_inob.name, options, _inob['agent_call']);
@@ -3034,14 +3027,14 @@ const rootMinQuery = function (pageName, recoveryMode) {
             let i = 0, len = this.length, ele;
             for (; i < len;) {
                 ele = this[i++];
-                if (typeof className === "function") className = className.call(ele);
+                if (MinQuery.isFunction(className)) className = className.call(ele);
                 return MinQuery.hasClass(ele[!hover ? "$class" : "$hoverClass"], className) !== -1;
             }
         },
         // 添加一个不存在的样式
         addClass(className, hover) {
             this.each(function () {
-                if (typeof className === "function") className = className.call(this);
+                if (MinQuery.isFunction(className)) className = className.call(this);
                 if (!MinQuery(this).hasClass(className)) {
                     className = MinQuery.addClass(this.$class, className);
                     setCurrentPageData(`${this.$selectorType}.${this.$selectorName}.${!hover ? "$class" : "$hoverClass"}`, className);
@@ -3052,7 +3045,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
         // 删除一个样式
         removeClass(className, hover) {
             this.each(function () {
-                if (typeof className === "function") className = className.call(this);
+                if (MinQuery.isFunction(className)) className = className.call(this);
                 className = MinQuery.removeClass(this.$class, className);
                 setCurrentPageData(`${this.$selectorType}.${this.$selectorName}.${!hover ? "$class" : "$hoverClass"}`, className);
             });
@@ -3190,8 +3183,8 @@ const rootMinQuery = function (pageName, recoveryMode) {
     MinQuery.extend({
         canvas(canvasId, contextMovementCall) {
             // 支持无id创建canvas上下文
-            if(MinQuery.isFunction(canvasId)) {
-                contextMovementCall = canvasId;canvasId = null;
+            if (MinQuery.isFunction(canvasId)) {
+                contextMovementCall = canvasId; canvasId = null;
             }
             let priv_context_path = `$canvas-context-${!!canvasId ? canvasId : MinQuery.now()}`;
             let current_context = elem_priv.get(this, priv_context_path, !!canvasId ? wx.createCanvasContext(canvasId) : wx.createContext());
@@ -3201,7 +3194,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             return current_context;
         },
         video(videoId) {
-            if(!MinQuery.isString(videoId)) return;
+            if (!MinQuery.isString(videoId)) return;
             let context = elem_priv.get(this, "$video-context", wx.createVideoContext(videoId));
             context.send = function (message) {
                 this.sendDanmu({
@@ -3212,9 +3205,9 @@ const rootMinQuery = function (pageName, recoveryMode) {
             return context
         },
         audio(audioId) {
-            if(!MinQuery.isString(audioId)) return;
+            if (!MinQuery.isString(audioId)) return;
             let context = elem_priv.get(this, "$audio-context", wx.createAudioContext(audioId));
-            context.start = function(){
+            context.start = function () {
                 this.seek(0);
             }
             return context;

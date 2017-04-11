@@ -1,7 +1,7 @@
 //index.js
 //获取应用实例
 var app = getApp();
-const ctx = wx.createCanvasContext('myCanvas1')
+const ctx = wx.createCanvasContext('myCanvas');
 Page({
   data: {
     banner: {

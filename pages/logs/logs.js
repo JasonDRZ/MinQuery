@@ -101,14 +101,10 @@ $((_$) => {
     
   // setInterval(function(){
   canvas.on("touchmove", function (e) {
-    console.log("canvas move event!!!")
-    console.log($(this).canvas());
     $(this).canvas(function () {
       this.setFillStyle('red')
       this.fillRect(e.touches[0].x, e.touches[0].y, 150, 75)
     })
-  }).on('error',function(e){
-    console.error(e);
   });
   // },13);
 var __video = $("#myVideo").on("pause",function(e){
@@ -140,18 +136,18 @@ var __video = $("#myVideo").on("pause",function(e){
   // $.ajax('https://minapp.ieyuan.com/jwhudong/api.php?op=content&module=comm&catid=67&page=1&state=0', {
   $.get('https://minapp.ieyuan.com/jwhudong/api.php', {
     op:'content',module:'comm',catid:67,page:1,state:0
-  },(res, state) => {
-    
-  }).success((res, state) => {
-    console.log(res, state);
+  }).success((res) => {
+    console.log(res);
     console.info($.$trigger('getUserInfo',function(i){
       // 通过dataAccess方法获取到globalData，的hook函数
       let globals = (this.dataAccess('globalData'));
       console.log(globals.get());
       console.info("I have success getUserInfo!!!",i)
     }));
-  }).fail((res, state) => {
+  }).fail((res) => {
     console.log(res);
+  }).complete(function(re){
+    console.info(re);
   });
 
 
@@ -177,11 +173,10 @@ var __video = $("#myVideo").on("pause",function(e){
     $.navigateTo("../test-1/test-1")
   })
   _page.on("ready", "ready to go", function (e) {
-    console.info("Page ready event has a custom handler!", e)
+    // Canvas在真机中需要等待页面处理方法加载完全之后才能正确进行画布动作。
     canvas.canvas(function () {
       this.setFillStyle('red')
       this.fillRect(10, 10, 150, 75)
-      console.info('Draw canvas!',this)
     });
     // $.showModal("我正在加载！","莫泰的内容！！",true,"Canc","#5ee2c4","Conf","#1abee2",{success: function(){
     //   console.info("我已经加载成功了！！！！！！")
