@@ -3,89 +3,31 @@
 view{
   box-sizing: border-box;
 }
-.header_container {
-  z-index: 9999;
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 40px;
-  width: 100%;
+.header{
+  background-color: #f1f1f1;
 }
-.header_text{
-  color: #fff;
-  font-size: 12px;
-  line-height: 25px;
+.header-title{
+  padding-top: 4rem;
+  text-align: center;
+  font-size: 1.6rem;
 }
-
-.current_location {
-  position: absolute;
-  left: 10px;
-  top: 7.5px;
-  height: 25px;
-  width: 25px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 12.5px;
-  padding-left: 25px;
+.header-info{
+  padding: 2rem;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.7em;
+  color: #888;
 }
-.current_location text{
-  display: none;
+.cotainer{
+  padding: 10px;
 }
-.current_location.active{
-  width: 100px;
+.guide-item{
+  padding: 15px;
+  background-color: #fff;
+  border-radius: 3px;
+  margin: 10px 0;
 }
-.current_location.active text{
-  display: inline-block;
-  width: 100%;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-.current_location::before, .current_location::after {
-  content: "";
-  position: absolute;
-  display: inline-block;
-  border: 1px solid #fff;
-}
-
-.current_location::before {
-  top: 4px;
-  left: 6.3px;
-  width: 12px;
-  height: 12px;
-  -webkit-transform: rotate(45deg);
-  -moz-transform: rotate(45deg);
-  -ms-transform: rotate(45deg);
-  transform: rotate(45deg);
-  border-radius: 50% 50% 0 50%;
-}
-
-.current_location::after {
-  top: 8px;
-  left: 10px;
-  width: 4px;
-  height: 4px;
-  border: 1px solid #fff;
-  border-radius: 50%;
-}
-
-.search_box{
-  position: absolute;
-  right: 10px;
-  top: 7.5px;
-  height: 25px;
-  width: calc(100% - 125px - 20px);
-  background: rgba(255,255,255, 0.9);
-  border-radius: 12.5px;
-  padding: 0 10px;
-  color: #adadad;
-}
-.search_box input{
-  height: 100%;
-}
-.banner_container{
-  margin-top: -1rem;
-}
-.banner_item{
-  background-size: cover;
-  background-position: center;
+.guide-item::after{
+  content: '>';
+  float: right;
 }

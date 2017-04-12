@@ -925,6 +925,7 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
                     continue dotKeyEach;
                 }
                 arrKeys = eackKey.match(/\[(.+?)\]/g);
+                console.log(arrKeys);
                 if (arrKeys) {
                     if (eackKey[eackKey.length - 1] !== "]") {
                         console.error(`Data setter key format error: [${d}];Should like: "key","key.key","key[1].key","key[1][0].key"`);
@@ -932,6 +933,7 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
                         // 终止当前数据项后续循环步骤
                         break dotKeyEach;
                     }
+                    let a,ai = 0,_len = arrKeys.length;
                     // 去掉数组key
                     noArrKey = eackKey.replace(arrKeys.join(""), "");
                     // 检测遍历类型
@@ -940,7 +942,8 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
                     };
                     // 递归赋值
                     _rd = _rd[noArrKey];
-                    arrKeys.forEach((a, ai) => {
+                    for(;ai < _len;){
+                        a = arrKeys[ai];
                         a = Array.from(a);
                         // 去掉中括号
                         a.shift();
@@ -948,10 +951,11 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
                         a = a.join("");
                         // 返回查询数据
                         if (d == dotKeys.length - 1 && ai == arrKeys.length - 1) {
+                            
                             if (dataRequire) {
+                                console.log(_rd[a],dataRequire);
                                 return _rd[a];
-                            }
-                            _rd[a] = value;
+                            } else _rd[a] = value;
                         } else {
                             // 检测并初始化为数组
                             if (!analyType(_rd, a, [])) {
@@ -959,7 +963,7 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
                             };
                             _rd = _rd[a];
                         }
-                    })
+                    }
                 } else {
                     // 返回查询的数据
                     if (d == dotKeys.length - 1) {
@@ -1070,7 +1074,7 @@ _$.each(wxMethodsParamsConfig, function (i, _oj) {
                         // 仅设置有预制项的字段
                         if (!_$.isUndefined(_preset)) options[dar[0]] = _preset;
                     });
-                    if(_$.isPlainObject(_first)){
+                    if (_$.isPlainObject(_first)) {
                         $extend(options, _first);
                     } else _$.each(args, function (_i, ar) {
                         _type_match = false;
@@ -2496,7 +2500,6 @@ const rootMinQuery = function (pageName, recoveryMode) {
     let elementEventHandlers = {
         // 处理bind事件
         "$bind": function (e) {
-            console.log(e);
             findElementEventHandler(e, "bind");
         },
         // 处理catch事件
@@ -3226,7 +3229,117 @@ const rootMinQuery = function (pageName, recoveryMode) {
         }
     })
     // 用于存储当前页面所设置的数据hook对象，防止二次设置
-    let ___dataHooks__ = {};
+    let __registeredDataHooks__ = {};
+    let __dataHooks__ = {
+        // 获取
+        get(key) {
+            key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
+            if(MinQuery.isArray(this.__path__)){
+                var _gt = {},_kn = this.__hooks__;
+                MinQuery.each(this.__path__,function(i,pt){
+                    _gt[_kn[i]] = MinQuery.getData(pt + key);
+                });
+                return _gt;
+            } else return MinQuery.getData(this.__path__ + key);
+        },
+        // 对象操作
+        // 修改当前对象中对应的键值
+        set(key, value) {
+            if (!value) { value = key; key = null }
+            key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
+            setCurrentPageData(this.__path__ + key, value);
+        },
+        // 将当前或某一字段设置为null，或指定的值
+        clear(key, _type) {
+            if (!MinQuery.isUndefined(key) && MinQuery.isUndefined(_type)) { _type = key; key = null };
+            key = !!key ? `.${key}` : "";
+            _type = !MinQuery.isUndefined(_type) ? _type : null;
+            if(MinQuery.isArray(this.__path__)){
+                let _clear = {};
+                MinQuery.each(this.__path__,function(i,pt){
+                    _clear[pt + key] = _type;
+                });
+                setCurrentPageData(_clear);
+            } else setCurrentPageData(this.__path__ + key, _type);
+        },
+        // 数组操作：不支持多字段跟字段操作
+        // 如果当前或某一子字段为数组形式，则可以使用此接口进行项目添加
+        append(value, isExtend) {
+            if (!value) {
+                return;
+            }
+            let _old_val, _path = this.__path__;
+            _old_val = MinQuery.getData(_path);
+            if (MinQuery.isArray(_old_val)) {
+                // 支持传入数组继承到源素组
+                if (MinQuery.isArray(value) && isExtend === true) {
+                    _old_val.concat(value);
+                } else {
+                    _old_val.push(value);
+                }
+                setCurrentPageData(_path, _old_val);
+            }
+        },
+        prepend(value, isExtend) {
+            if (!value) {
+                return;
+            }
+            let _old_val, _path = this.__path__;
+            _old_val = MinQuery.getData(_path);
+            if (MinQuery.isArray(_old_val)) {
+                if (MinQuery.isArray(value) && isExtend === true) {
+                    value.concat(_old_val);
+                } else {
+                    _old_val.unshift(value);
+                }
+                setCurrentPageData(_path, _old_val);
+            }
+        },
+        // 在数组的某一个索引后添加元素
+        after(index, value, extend) {
+            let _old_val, _path = this.__path__;
+            _old_val = MinQuery.getData(_path);
+            // 仅对数组类型数据进行修改尝试
+            if (MinQuery.isArray(_old_val)) {
+                if (MinQuery.isArray(value) && isExtend === true) {
+                    let _len = _old_val.length, _bef = _old_val.slice(0, index), _af = _old_val.slice(index, _len);
+                    _bef.concat(value);
+                    _bef.concat(_af);
+                    _old_val = _bef;
+                } else {
+                    _old_val.splice(index + 1, 0, value);
+                }
+                setCurrentPageData(_path, _old_val);
+            }
+        },
+        // 在数组的某一个索引前添加元素
+        before(index, value, extend) {
+            let _old_val, _path = this.__path__;
+            _old_val = MinQuery.getData(_path);
+            // 仅对数组类型数据进行修改尝试
+            if (MinQuery.isArray(_old_val)) {
+                if (MinQuery.isArray(value) && isExtend === true) {
+                    index = index + 1;
+                    let _len = _old_val.length, _bef = _old_val.slice(0, index), _af = _old_val.slice(index, _len);
+                    _old_val = _bef.concat(value, _af);
+                } else {
+                    _old_val.splice(index, 0, value);
+                }
+                setCurrentPageData(_path, _old_val);
+            }
+        },
+        // 在删除某个数组中的指定元素
+        remove(key, index) {
+            if (MinQuery.type(key) === 'number') { index = key; key = null }
+            let _old_val, _path = this.__path__ + (!!key ? `.${key}` : "");
+            _old_val = MinQuery.getData(_path);
+            // 仅对数组类型数据进行修改尝试
+            if (MinQuery.isArray(_old_val)) {
+                _old_val.splice(index, 1);
+                setCurrentPageData(_path, _old_val);
+            }
+        }
+    };
     // 设置数据[keyString'设置查询的字符串'，keyValue'设置值']
     /**
      * stayFormat Boolean 用于标识单个数据设置时，是否保留对象状态，而非返回当前当个hook
@@ -3235,8 +3348,9 @@ const rootMinQuery = function (pageName, recoveryMode) {
     let setCurrentPageData = function (keyString, keyValue, stayFormat, detecteInerit) {
         // 将数据格式统一规划为对象方式
         let i = 0, returns = {
+            __path__: [],
             __length__: 0,
-            __paths__: []
+            __hooks__: []
         }, k, ka, ik, fk, oldValue;
         // if (MinQuery.isString(keyString) && !!keyValue) {
         if (MinQuery.isString(keyString)) {
@@ -3263,96 +3377,25 @@ const rootMinQuery = function (pageName, recoveryMode) {
                     }
                 }
             }
-            oldValue = MinQuery.getData(k);
+            // 验证设置的值是否与Page实例对象上的值相同，避免框架数据篡改带来的影响
+            oldValue = !!MinQuery.pageInstance ? MinQuery.getData(MinQuery.pageInstance.data, k) : MinQuery.getData(k);
             if (oldValue === keyString[k]) delete keyString[k];
+
             // 获取操作key的最后一位，作为当前返回操作的标识
             fk = ka[ka.length - 1];
             // 设置returns的同时挂载到dataHook上；
-            ___dataHooks__[ka] = returns[fk] = {
+            returns[fk] = {
                 // 操作hook的目标查询路径
-                __path__: k,
-                // 获取
-                get(key) {
-                    key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
-                    return MinQuery.getData(this.__path__ + key);
-                },
-                // 对象操作
-                // 修改当前对象中对应的键值
-                set(key, value) {
-                    if (!value) { value = key; key = null }
-                    key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
-                    setCurrentPageData(this.__path__ + key, value);
-                },
-                // 数组操作
-                // 如果当前或某一子字段为数组形式，则可以使用此接口进行项目添加
-                append(key, value) {
-                    if (!value) {
-                        value = key; key = '';
-                    } else {
-                        key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
-                    }
-                    let _old_val, _path = this.__path__ + key;
-                    _old_val = MinQuery.getData(_path);
-                    if (MinQuery.isArray(_old_val)) {
-                        _old_val.push(value);
-                        setCurrentPageData(_path, _old_val);
-                    }
-                },
-                prepend(key, value) {
-                    if (!value) {
-                        value = key; key = '';
-                    } else {
-                        key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
-                    }
-                    let _old_val, _path = this.__path__ + key;
-                    _old_val = MinQuery.getData(_path);
-                    if (MinQuery.isArray(_old_val)) {
-                        _old_val.unshift(value);
-                        setCurrentPageData(_path, _old_val);
-                    }
-                },
-                // 在数组的某一个索引后添加元素
-                after(key, index, value) {
-                    if (MinQuery.type(key) === 'number') { value = index; index = key; key = null }
-                    let _old_val, _path = this.__path__ + (!!key ? `.${key}` : "");
-                    _old_val = MinQuery.getData(_path);
-                    // 仅对数组类型数据进行修改尝试
-                    if (MinQuery.isArray(_old_val)) {
-                        _old_val.splice(index + 1, 0, value);
-                        setCurrentPageData(_path, _old_val);
-                    }
-                },
-                // 在数组的某一个索引前添加元素
-                before(key, index, value) {
-                    if (MinQuery.type(key) === 'number') { value = index; index = key; key = null }
-                    let _old_val, _path = this.__path__ + (!!key ? `.${key}` : "");
-                    _old_val = MinQuery.getData(_path);
-                    // 仅对数组类型数据进行修改尝试
-                    if (MinQuery.isArray(_old_val)) {
-                        _old_val.splice(index, 0, value);
-                        setCurrentPageData(_path, _old_val);
-                    }
-                },
-                // 在删除某个数组中的指定元素
-                remove(key, index) {
-                    if (MinQuery.type(key) === 'number') { index = key; key = null }
-                    let _old_val, _path = this.__path__ + (!!key ? `.${key}` : "");
-                    _old_val = MinQuery.getData(_path);
-                    // 仅对数组类型数据进行修改尝试
-                    if (MinQuery.isArray(_old_val)) {
-                        _old_val.splice(index, 1);
-                        setCurrentPageData(_path, _old_val);
-                    }
-                },
-                // 将当前或某一字段设置为null，或指定的值
-                clear(key, _type) {
-                    if (!!key && !_type) { _type = key; key = null };
-                    setCurrentPageData(this.__path__ + (!!key ? `.${key}` : ""), _type ? _type : null);
-                }
+                __path__: k
             }
-            returns.__length__ = i;
-            returns.__paths__.push(fk);
+            MinQuery.extend(returns[fk],__dataHooks__);
+            __registeredDataHooks__[ka] = returns[fk];
+            returns.__length__ ++;
+            returns.__hooks__.push(fk);
+            // 根事件
+            returns.__path__.push(k);
         }
+        ;
         if (!_$.isEmptyObject(keyString)) {
             // 如果存在page对象则将数据绑定到page对象上
             // 小程序原型方法
@@ -3361,7 +3404,12 @@ const rootMinQuery = function (pageName, recoveryMode) {
             MinQuery.dataProcessor(MinQuery.$pageInitObject.data, keyString);
         }
         // 如果
-        stayFormat !== true && returns.__length__ === 1 && (returns = returns[returns.__paths__[0]]);
+        if(stayFormat !== true && returns.__length__ === 1) {
+            returns = returns[returns.__hooks__[0]]
+        } else {
+            // 多个字段时，在根节点上挂载处理方法
+            MinQuery.extend(returns,__dataHooks__);
+        }
         // 返回一个后期操作hook，
         return returns;
     }
@@ -3386,7 +3434,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
         // setData Hook 访问器，可在访问的同时设置一次当前数据Hook的值
         dataAccess(keyString, keyValue) {
             if (MinQuery.isString(keyString)) {
-                let _hook = ___dataHooks__[keyString];
+                let _hook = __registeredDataHooks__[keyString];
                 if (keyValue) _hook.set(keyValue);
                 return _hook;
             } else return undefined;

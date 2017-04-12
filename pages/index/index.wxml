@@ -1,29 +1,12 @@
+
 <!--index.wxml-->
-<view class="header_container">
-  <view class="current_location active" bindtap="location">
-    <text class="header_text">环球中心环球中心</text></view>
-  <view class="search_box header_text" bindtap="pushSwiper">
-    <input bindtap="" placeholder="搜索" />
+<view class="header">
+  <view class="header-title">MinQuery API应用演示</view>
+  <view class="header-info">
+    MinQuery是一款针对WeChat-Min-App的一套轻量级代码工具库。旨在简化小程序开发管理流程，降低开发门槛，提高开发效率。
   </view>
 </view>
-<view class="banner_container">
-  <swiper indicator-dots="{{banner.indicatorDots}}"
-    autoplay="{{banner.autoplay}}" current="{{banner.current}}" interval="{{banner.interval}}" duration="{{banner.duration}}" bindchange="onChange">
-    <block wx:for="{{banner.imgUrls}}">
-      <swiper-item width="355" height="150" class="banner_item" style="background-image: url({{item}});">
-      </swiper-item>
-    </block>
-  </swiper>
+<view class="cotainer">
+  <view class="guide-item" data-m-class="navigater" data-url='../dataset/dataset' bindtap="$bind">数据设置</view>
+  <view class="guide-item" data-m-class="navigater" data-url='../dataset/dataset' bindtap="$bind">数据设置</view>
 </view>
-<view class="classify_swiper">
-  <swiper indicator-dots="{{classify.indicatorDots}}"
-    autoplay="{{classify.autoplay}}" interval="{{classify.interval}}" duration="{{classify.duration}}" >
-    <block wx:for="{{classify.classGroups}}">
-      <swiper-item width="355" height="150">
-        
-      </swiper-item>
-    </block>
-  </swiper>
-</view>
-
-<canvas canvas-id="myCanvas1" id='myCanvas1' disable-scroll="{{true}}" style="border: 1px solid;" bindtouchmove="onCanvasMove"/>

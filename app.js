@@ -1,5 +1,6 @@
 //app.js
 // var loadPlugin = require("../../plugins/loader").load;
+// var $ = require("MinQuery.1.0.2.min").load("app");
 var $ = require("MinQuery/index").load("app");
 // $.app(function(){
 //   this.on("launch",function(){
