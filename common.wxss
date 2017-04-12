@@ -1,0 +1,13 @@
+.operation_block{
+    padding: 15px;
+    background-color: #fff;
+    width: 100%;
+    margin-bottom: 10px
+}
+.block_title{
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+.block_body{
+    padding: 10px 0;
+}

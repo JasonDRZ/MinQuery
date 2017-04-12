@@ -1,0 +1,33 @@
+
+<!--index.wxml-->
+<view class="operation_block">
+  <view class="block_title">对象数据设置</view>
+  <view class="block_body">
+    <view class="dataset-object">
+      Author: {{author}};
+    </view>
+    <view class="dataset-object">
+      Gander: {{gander}};
+    </view>
+     <view class="dataset-object">
+      Work: {{work}};
+    </view>
+    <button type="primary" id="change_author" bindtap="$bind">修改作者</button>
+    <button type="primary" id="get_author" bindtap="$bind">作者名称: {{author_name}}</button>
+    <button type="primary" id="change_info" bindtap="$bind">修改信息</button>
+    <button type="warn" id="delete_info" bindtap="$bind">删除数据</button>
+  </view>
+</view>
+<view class="operation_block">
+  <view class="block_title">素组数据设置</view>
+  <view class="block_body">
+    <view wx:for="{{items}}" class="dataset-object">
+      This is a forEach Item,index: {{item}};
+    </view>
+    <button type="primary" id="prepend" bindtap="$bind">prepend</button>
+    <button type="primary" id="append" bindtap="$bind">append</button>
+    <button type="primary" id="before" bindtap="$bind">insert before No.2</button>
+    <button type="primary" id="after" bindtap="$bind">insert after No.2</button>
+    <button type="warn" id="delete" bindtap="$bind">delete No.2</button>
+  </view>
+</view>
