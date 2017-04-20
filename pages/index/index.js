@@ -1,5 +1,5 @@
 //index.js
-let $ = wx.MinQuery.load('index');
+let $ = wx.MinQuery('index');
 
 $(function(){
   $('.navigater').on('tap',function(e){

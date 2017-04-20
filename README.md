@@ -48,7 +48,7 @@ let MinQuery = require("../path/MinQuery");
 #### 载入App对象
 ```js
 <!--通过'app'标识挂载App()实例方法-->
-let $ = MinQuery.load("app");
+let $ = MinQuery("app");
 
 //# 运行App实例
 $(()=>{
@@ -72,7 +72,7 @@ $(()=>{
 #### 载入Page对象
 ```js
 <!--通过传入当前页面名称，来获取Page()实例方法-->
-let $ = MinQuery.load("pageName");
+let $ = wx.MinQuery("pageName");
 //# 运行Page实例
 $(()=>{
     <!--bind some element events or data-->

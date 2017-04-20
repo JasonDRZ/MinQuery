@@ -13,7 +13,7 @@
       Work: {{work}};
     </view>
     <button type="primary" id="change_author" bindtap="$bind">修改作者</button>
-    <button type="primary" id="get_author" bindtap="$bind">作者名称: {{author_name}}</button>
+    <button type="primary" id="get_author" bindtap="$bind">爱好之一: {{author_hobby}}</button>
     <button type="primary" id="change_info" bindtap="$bind">修改信息</button>
     <button type="warn" id="delete_info" bindtap="$bind">删除数据</button>
   </view>
