@@ -1,7 +1,14 @@
 {
   "pages":[
+    "pages/index/index",
     "pages/dataset/dataset",
-    "pages/index/index"
+    "pages/pageevent/pageevent",
+    "pages/request/request",
+    "pages/form/form",
+    "pages/components/components",
+    "pages/simple_app/simple_app",
+    "pages/elements/elements"
+    
     
     
     

@@ -17,11 +17,12 @@ const $mq_config = {
         "$cs": ["$cs", "To store element,whitch selected by data-min-class!"],
         "$window": ["$window", "To store system infomation."],
         "$data": ["$data", "To store custom isolate data!"],
+        "$servers": ["$servers", "To store global server configuration!"],
         // 固有事件处理函数标识
         "$bind": ["$bind", "A unified bind[event] handler."],
         "$catch": ["$catch", "A unified catch[event] handler."],
         // 元素固有操作属性标识
-        "$class": ["$class", "To manage the element class string! Access method: $id/$cs.elementID/mClass/mClass.$class"],
+        "$class": ["$class", "To manage the element class string! Access method: $id/$cs.elementID/mClass.$class"],
         "$hoverClass": ["$hoverClass", "To manage the element hover-class string! Access method: $id/$cs.elementID/mClass.$hoverClass"],
         "$attr": ["$attr", "To manage the element multiple attributes value! Access method: $id/$cs.elementID/mClass.$attr.disabled;"],
         "$cf": ["$cf", "To manage the Min App View Plugin's configuration! Access method: $id/$cs.elementID/mClass.$attr.disabled;"],
@@ -30,6 +31,7 @@ const $mq_config = {
         "$data": ["$data", "To manage the element multiple custom data object! Access method: $id/$cs.elementID/mClass.$data.imageSrc;"],
         "$children": ["$children", "To mark children elements,whitch are wraped by this element! Not recommend to access!"],
         "$animation": ["$animation", "To manage the element animation object!Access method: $id/$cs.elementID/mClass.$animation;"],
+        "$text": ["$text", "To manage the element text string! Access method: $id/$cs.elementID/mClass.$text"],
         "$events": ["$events", "To manage the element events bank route! Not recommend to access!"],
         "$selectorType": "To cache the element selector type!",
         "$selectorName": "To cache the element selector name!"
@@ -73,6 +75,28 @@ const $mq_config = {
         }
     }
 };
+
+const wxLaunchScene = {
+    '1001': [1001, '发现栏小程序主入口'],
+    '1005': [1005, '顶部搜索框的搜索结果页'],
+    '1006': [1006, '发现栏小程序主入口搜索框的搜索结果页'],
+    '1007': [1007, '单人聊天会话'],
+    '1008': [1008, '群聊会话'],
+    '1011': [1011, '扫描二维码'],
+    '1014': [1014, '小程序模版消息'],
+    '1020': [1020, '公众号 profile 页相关小程序列表'],
+    '1022': [1022, '聊天顶部置顶小程序入口'],
+    '1023': [1023, '安卓系统桌面图标'],
+    '1024': [1024, '小程序 profile 页'],
+    '1025': [1025, '扫描一维码'],
+    '1028': [1028, '我的卡包'],
+    '1029': [1029, '卡券详情页'],
+    '1035': [1035, '公众号自定义菜单'],
+    '1036': [1036, 'App 分享消息卡片'],
+    '1042': [1042, '添加好友搜索框的搜索结果页'],
+    '1043': [1043, '公众号模板消息'],
+};
+
 // 微信小程序原生接口支持，不支持组件接口
 const wxMethodsParamsConfig = [{
     name: "request",
@@ -83,6 +107,8 @@ const wxMethodsParamsConfig = [{
     agent_call: function (wxMethod, options) {
         // 用于支持用户小写输入
         !!options.method && (options.method = options.method.toUpperCase());
+        // 加入设置的apiUrl头
+        options.url = autoMendServer(options.url, 'ajaxServer');
         wxMethod(options);
     }
 }, {
@@ -92,16 +118,31 @@ const wxMethodsParamsConfig = [{
     // 必填参数，或者说支持快捷设置的参数，最后多一个config参数用于统一设置选填参数
     param_def: [['url'], ['filePath'], ['name']],
     // 选填参数
-    param_nor: [['header', 'object'], ['formData', 'object']]
+    param_nor: [['header', 'object'], ['formData', 'object']],
+    agent_call: function (wxMethod, options) {
+        // 加入设置的apiUrl头
+        options.url = autoMendServer(options.url, 'uploadServer');
+        wxMethod(options);
+    }
 }, {
     name: 'downloadFile',
     param_def: [['url']],
-    param_nor: [['header', 'object']]
+    param_nor: [['header', 'object']],
+    agent_call: function (wxMethod, options) {
+        // 加入设置的apiUrl头
+        options.url = autoMendServer(options.url, 'downloadServer');
+        wxMethod(options);
+    }
 }, {
     // webSocket
     name: 'connectSocket',
     param_def: [['url']],
-    param_nor: [['data', 'object'], ['header', 'object'], ['method']]
+    param_nor: [['data', 'object'], ['header', 'object'], ['method']],
+    agent_call: function (wxMethod, options) {
+        // 加入设置的apiUrl头
+        options.url = autoMendServer(options.url, 'socketServer');
+        wxMethod(options);
+    }
 }, {
     // 只有名称的则直接返回传入参数后的方法
     name: 'onSocketOpen'
@@ -418,17 +459,41 @@ const wxMethodsParamsConfig = [{
     // 导航
     name: 'navigateTo',
     param_def: [['url']],
-    param_nor: []
+    param_nor: [],
+    agent_call: function (wxMethod, options) {
+        // 自动补全本地路径
+        options.url = smartToCompleteLocalPath(options.url);
+        wxMethod(options);
+    }
 }, {
     name: 'redirectTo',
     param_def: [['url']],
-    param_nor: []
+    param_nor: [],
+    agent_call: function (wxMethod, options) {
+        // 自动补全本地路径
+        options.url = smartToCompleteLocalPath(options.url);
+        wxMethod(options);
+    }
 }, {
     name: 'switchTab',
     param_def: [['url']],
-    param_nor: []
+    param_nor: [],
+    agent_call: function (wxMethod, options) {
+        // 自动补全本地路径
+        options.url = smartToCompleteLocalPath(options.url);
+        wxMethod(options);
+    }
 }, {
     name: 'navigateBack'
+}, {
+    name: 'reLaunch',
+    param_def: [['url']],
+    param_nor: [],
+    agent_call: function (wxMethod, options) {
+        // 自动补全本地路径
+        options.url = smartToCompleteLocalPath(options.url);
+        wxMethod(options);
+    }
 }, {
     // 下拉刷新
     name: 'stopPullDownRefresh'
@@ -890,9 +955,6 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
             } else
                 obj[keyString] = keyValue;
         }
-        let undefindData = function (key, _tar) {
-            console.error(`The key:[${key}] does not exist in data:`, _tar);
-        }
         // dataRequire模式，不存在则返回false，并终止；
         // 非dataRequire模式，将自动初始化对象的值为指定的objInit值
         let analyType = function (_data, key, objInit) {
@@ -924,16 +986,15 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
                 if (eackKey.replace(/\s/g, "") === "") {
                     continue dotKeyEach;
                 }
-                arrKeys = eackKey.match(/\[(.+?)\]/g);
-                console.log(arrKeys);
+                arrKeys = eackKey.match(/\[(\d+)\]/g);
                 if (arrKeys) {
                     if (eackKey[eackKey.length - 1] !== "]") {
-                        console.error(`Data setter key format error: [${d}];Should like: "key","key.key","key[1].key","key[1][0].key"`);
+                        console.error(`Data setter key format error: [${d}];Should like: "key","key.key","key[1].key","key[1][0].key"`);//no support "key[1][0].key[1]"
                         // break dataEach;
                         // 终止当前数据项后续循环步骤
                         break dotKeyEach;
                     }
-                    let a,ai = 0,_len = arrKeys.length;
+                    let a, ai = 0, _len = arrKeys.length;
                     // 去掉数组key
                     noArrKey = eackKey.replace(arrKeys.join(""), "");
                     // 检测遍历类型
@@ -941,8 +1002,8 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
                         return undefined;
                     };
                     // 递归赋值
-                    _rd = _rd[noArrKey];
-                    for(;ai < _len;){
+                    noArrKey !== '' && (_rd = _rd[noArrKey]);
+                    for (; ai < _len; ai++) {
                         a = arrKeys[ai];
                         a = Array.from(a);
                         // 去掉中括号
@@ -951,9 +1012,7 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
                         a = a.join("");
                         // 返回查询数据
                         if (d == dotKeys.length - 1 && ai == arrKeys.length - 1) {
-                            
                             if (dataRequire) {
-                                console.log(_rd[a],dataRequire);
                                 return _rd[a];
                             } else _rd[a] = value;
                         } else {
@@ -987,20 +1046,20 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
 };
 
 
-const wxCalls = "fail,success,complete,cancel".split(",");
-const wxMethodsCallbackGenerate = function (methodName, options, wrapperCall, context) {
+const wxCalls = "fail,success,complete,cancel,delay,exec".split(",");
+const wxMethodsCallbackGenerate = function (methodName, _options, wrapperCall, context) {
     // 检测并设置wx对象上下文
     !context && (context = wx);
     // 检测调用方法名称及是否存在
+    let options = !_options ? {} : _options;
     if (typeof methodName == 'string' && methodName in context) {
-        !options && (options = {});
         let _backup = {}, k, f;
         // 剥离参数中的类型回调函数
         for (k in wxCalls) {
-            f = wxCalls[k];
+            f = options[k];
             if (_$.isFunction(f)) {
                 // 仅存储预设回调名称中的回调函数
-                if (options.indexOf(k) !== -1) _backup[k] = f;
+                _backup[k] = f;
                 // 删除参数中非预定回调函数
                 delete options[k];
             } else {
@@ -1058,19 +1117,18 @@ let _wxMethodsPackages = {};
 _$.each(wxMethodsParamsConfig, function (i, _oj) {
     if (_oj.name) {
         _wxMethodsPackages[_oj.name] = (function (_inob) {
-            let _param_def = _inob['param_def'], _param_nor = _inob['param_nor'], _param_all, options = {};
+            let _param_def = _inob['param_def'], _param_nor = _inob['param_nor'], _param_all;
             if (_$.isArray(_param_def)) {
                 _param_all = _$.isArray(_param_nor) ? _param_def.concat(_param_nor) : _param_def;
             } else _param_all = null;
             return function () {
                 // 返回的封装函数
-                let args = slice.call(arguments), _has_config = _$.isArray(_param_all), _type = 'string', _type_match = false, _preset = '', _cur_param, _first = args[0];
+                let args = slice.call(arguments), _has_config = _$.isArray(_param_all), _type = 'string', _type_match = false, _preset = '', _cur_param, _first = args[0], options = {};
                 // 如果存在配置，则表明此项一定是异步回调形式，则进行预设参数进行继承
                 if (_has_config) {
                     // 优先进行配置项预设
                     _$.each(_param_all, function (_i, dar) {
-                        _cur_param = _param_all[_i];
-                        _preset = _cur_param[2];
+                        _preset = dar[2];
                         // 仅设置有预制项的字段
                         if (!_$.isUndefined(_preset)) options[dar[0]] = _preset;
                     });
@@ -1102,7 +1160,6 @@ _$.each(wxMethodsParamsConfig, function (i, _oj) {
         })(_oj);
     }
 });
-
 // **Github:** https://github.com/teambition/then.js
 //
 // **License:** MIT
@@ -1569,9 +1626,13 @@ const jsonToStyle = function (styleJson, extraStyle) {
             styleJson[key] = extraStyle[key];
         }
     }
-    let style = '';
+    let style = '', style_value, img_url;
     for (let key in styleJson) {
-        style += `${key}:${styleJson[key]};`;
+        style_value = styleJson[key], img_url = style_value.match(/url\(([^\s}]+)\)/);
+        if (_$.isArray(img_url)) {
+            style_value = 'url(' + autoMendServer(img_url[0], 'imageServer') + ")";
+        }
+        style += `${key}:${style_value};`;
     }
     return style;
 };
@@ -1626,43 +1687,8 @@ const $csscontrol = {
     removeClass: removeClass
 };
 
-
-const $getSystemInfo = function (targetObj) {
-    let sys, res = {};
-    try {
-        sys = wx.getSystemInfoSync()
-        if (sys) {
-            // res.model pixelRatio windowWidth windowHeight language version platform
-            res.DPI = sys.pixelRatio;
-            res.width = sys.windowWidth;
-            res.height = sys.windowHeight;
-            res.language = sys.language;
-            res.versino = sys.version;
-            res.platform = sys.platform;
-            res.model = sys.model;
-            res.system = sys.system;
-            targetObj = res;
-            return res;
-        }
-    } catch (e) {
-        // try async method 
-        wx.getSystemInfo({
-            success: function (sys) {
-                res.DPI = sys.pixelRatio;
-                res.width = sys.windowWidth;
-                res.height = sys.windowHeight;
-                res.language = sys.language;
-                res.versino = sys.version;
-                res.platform = sys.platform;
-                res.model = sys.model;
-                res.system = sys.system;
-                targetObj = res;
-            }
-        })
-    }
-};
 // 页面标示，用于存储对应页面的MinQuery对象，防止二次注册页面
-const $pageMQRegisterInstances = {};
+const $pageMQRegisterTags = {};
 // 页面MQ对象存储器，仅在页面被load后才加载到此对象上，unload后卸载相应页面对象
 // 获取/打开打开的页面MQ实例对象
 const $pageLoadedInstances = {
@@ -1704,7 +1730,7 @@ let getSystemInfo = function (targetObj) {
         res.width = sys.windowWidth;
         res.height = sys.windowHeight;
         res.language = sys.language;
-        res.versino = sys.version;
+        res.version = sys.version;
         res.platform = sys.platform;
         res.model = sys.model;
         res.system = sys.system;
@@ -1717,7 +1743,7 @@ let getSystemInfo = function (targetObj) {
                 res.width = sys.windowWidth;
                 res.height = sys.windowHeight;
                 res.language = sys.language;
-                res.versino = sys.version;
+                res.version = sys.version;
                 res.platform = sys.platform;
                 res.model = sys.model;
                 res.system = sys.system;
@@ -1805,63 +1831,131 @@ const $globalEvents = {
         }
     }
 };
-
-// 小程序API二次封装调用方法
-// 链式注册异步回调链式处理函数
-let wxAsyncApiHandler = function (context) {
-    let _register = function (mname) {
-        context[mname] = {};
-        return {
-            fail(cb) {
-                context[mname].fail = cb;
-                return this;
-            },
-            error(cb) {
-                return this.fail(cb);
-            },
-            success(cb) {
-                context[mname].success = cb;
-                return this;
-            },
-            complete(cb) {
-                context[mname].complete = cb;
-                return this;
-            },
-            cancel(cb) {
-                context[mname].cancel = cb;
-            }
+// 全局数据配置，一般用于设置访问服务器地址等
+let globalConfiguration = {
+    __configurations__: {},
+    // 设置
+    set(key, value) {
+        _$.type(key) === 'number' && (key = key.toString());
+        if (_$.isPlainObject(key)) {
+            $extend(this.__configurations__, key);
+        } else if (_$.isString(key) && !_$.isUndefined(value)) {
+            this.__configurations__[key] = value;
         }
-    };
-    let _trigger = function (mname, method, res) {
-        if (context[mname] && context[mname][method]) {
-            let targetMethod = context[mname][method];
-            if (typeof targetMethod == 'function') {
-                _handleResponse(res, targetMethod, context[mname]);
-            }
-        }
-    }
-    let _handleResponse = function (e, call, callBank) {
-        let _err = e.errMsg.split(":");
-        if (_err[1] === "ok" && e.statusCode == 200) {
-            if (callBank instanceof Object) call = callBank['success'];
-            call && call(e.data, {
-                errMsg: e.errMsg,
-                statusCode: e.statusCode
-            });
+    },
+    get(key, preset) {
+        if (_$.isString(key)) {
+            return key in this.__configurations__ ? this.__configurations__[key] : preset ? (this.__configurations__[key] = preset) : undefined;
         } else {
-            if (callBank instanceof Object) call = callBank['fail'];
-            call && call(e);
+            return preset;
         }
-    };
-    return {
-        register: _register,
-        trigger: _trigger,
-        handleResponse: _handleResponse
     }
+};
+// 设置公共的ajax请求服务器地址
+// 设置Socket服务器地址
+// 设置upLoadFile服务器地址
+// 设置downloadFile服务器地址
+// 设置imageServer图片服务器地址
+// 设置audioServer音频服务器地址
+// 设置videoServer视频服务器地址
+const _serverTypes = 'ajaxServer,socketServer,uploadServer,downloadServer,imageServer,audioServer,videoServer'.split(',');
+_$.each(_serverTypes, function (i, k) {
+    globalConfiguration.set(k, '');
+});
+
+// 检查是否存在http或https协议头
+const hasHttp_sPrefix = function (target) {
+    if (_$.isString(target)) {
+        // 全路径文件匹配/^((http):\/\/[\w\/\.]*)?\w+\.{1}[a-z]+$/
+        let _ishttp = /^(http):\/\/[\w\/\.]*?\w+/.test(target),
+            _ishttps = /^(https):\/\/[\w\/\.]*?\w+/.test(target);
+        console.log(target, _ishttp, _ishttps)
+        if (_ishttp || _ishttps) {
+            return true;
+        }
+    } else return false;
+}
+// 自动分析链接中是否存在http或https协议头开始的路径，如果存在则认为是全路径，直接返回；如果不存在，则根据需求添加本地设置的响应服务器路径。
+const autoMendServer = function (url, serverType) {
+    let _server = _serverTypes.indexOf(serverType) !== -1 ? globalConfiguration.get(serverType, '') : '';
+    if (_$.isString(url)) {
+        // 取消链接的补全
+        let _needToFix = url[0] !== '!';
+        // 如果不需要补全则删掉第一位的感叹号
+        !_needToFix && (url = url.substr(1));
+        if (_needToFix) {
+            if (!hasHttp_sPrefix(url)) {
+                if (_$.trim(url) === '') {
+                    url = _server + '';
+                } else {
+                    url = _server + url;
+                }
+            }
+        }
+    }
+    return url;
+}
+// 允许可发直接数据页面的名称即可访问页面，而非输入全路径。
+const smartToCompleteLocalPath = function (url) {
+    if (_$.isString(url)) {
+        let _isFullPath = /^..\//.test(url), _needToFix = url[0] !== '!';
+        if (!_isFullPath && _needToFix) {
+            let _hasSlash = url.indexOf('/') !== -1, _splitPath = url.split('/');
+            if (_hasSlash) {
+                let _pname = _splitPath[_splitPath.length - 1];
+                url = '../' + _pname + '/' + _pname;
+            } else url = '../' + url + '/' + url;
+        }
+        // 如果不需要补全则删掉第一位的感叹号
+        !_needToFix && (url = url.substr(1));
+    }
+    return url;
 }
 
+let serverSetUpdateCallbacks = {};
+// 单个、批量设置服务器地址，或单个，全部服务器地址设置信息获取
+const configServers = function (serverName, serverAddress) {
+    if (_$.isPlainObject(serverName)) {
+        _$.each(serverName, function (sname, saddress) {
+            if (_$.isString(saddress)) {
+                globalConfiguration.set(sname, saddress);
+            }
+        })
+    } else if (_$.isString(serverName)) {
+        if (_$.isString(serverAddress)) {
+            globalConfiguration.set(serverName, serverAddress);
+        } else {
+            return globalConfiguration.get(serverName);
+        }
+    }
+    let _servers = {};
+    // 获取所有可设置的服务器地址字段
+    _$.each(_serverTypes, function (i, st) {
+        _servers[st] = globalConfiguration.get(st);
+    });
+    // 更新所有已注册页面中的服务器地址设置，检测是否为更新服务项，否则将出现死循环调用，导致内存溢出。
+    !!serverName && _$.each($pageLoadedInstances.get(), function (pname, pcontext) {
+        pcontext.setData('$servers', _servers);
+    })
+    return _servers;
+};
 
-
+let ajaxQueues = [];
+const makeAnAjaxRequest = function () {
+    let config = function (config, data, call) {
+        let _conf = {};
+        // 支持简易get传值形式
+        if (_$.isString(config)) {
+            _conf['url'] = config;
+            if (_$.isFunction(data)) _conf['success'] = data;
+            else _conf['data'] = data;
+            if (_$.isFunction(call)) _conf['success'] = call;
+        } else if (_$.isPlainObject(config)) {
+            _conf = config;
+        }
+        return _wxMethodsPackages.request(_conf);
+    }
+}
 
 
 // 方法主体
@@ -1988,6 +2082,19 @@ const rootMinQuery = function (pageName, recoveryMode) {
         // 继承外部工具方法
         _$);
 
+    MinQuery.extend({
+        // 单个、批量设置服务器地址，或单个，全部服务器地址设置信息获取
+        $servers: configServers,
+        // 自动补全服务器地址信息
+        /**
+         * url String 需要进行补全的url链接
+         * serverType String 服务器地址类型
+         * 
+         * return Complete Url 返回补全后的地址
+         */
+        autoMendServer: autoMendServer
+    })
+
     /** 此接口用于访问未支持的wx接口，提供二次封装，并支持链式调用方式。
      * 调用方法-分类回调形式：
      *      常规链式方法 MinQuery.wxMethod(wxMethodName,{config: value,success(re){}}).fail(err=>{});
@@ -2003,8 +2110,6 @@ const rootMinQuery = function (pageName, recoveryMode) {
     MinQuery.extend(_wxMethodsPackages);
 
     MinQuery.extend({
-        $window: $windowInfo,
-
         // Ajax methods
         ajax(config, data, call) {
             let _conf = {};
@@ -2043,6 +2148,34 @@ const rootMinQuery = function (pageName, recoveryMode) {
             })
         }
     });
+
+    //window字段查询方法
+    MinQuery.extend({
+        $window: $windowInfo
+    })
+    //window字段查询方法，这里的方法只能对window对象进行查询
+    MinQuery.fn.extend({
+        width() {
+            let ele = this[0];
+            if (!!ele && ele.$selectorName === "window") {
+                return ele.width;
+            }
+        },
+        height() {
+            let ele = this[0];
+            if (!!ele && ele.$selectorName === "window") {
+                return ele.height;
+            }
+        },
+        // 获取所有配置信息
+        info(key) {
+            let ele = this[0];
+            if (!!ele && ele.$selectorName === "window") {
+                return !!key ? ele[key] : ele;
+            }
+        }
+    })
+
 
     // Query Engine
     // Elements Data Selecte Engine MinQuery
@@ -2313,6 +2446,17 @@ const rootMinQuery = function (pageName, recoveryMode) {
     if (MinQuery.pageName === "app") {
         MinQuery.pageInheritEventList = $mq_config.appEvents;
         pageEventMiddleware = function (e, ename) {
+            var _rewrite_event = {};
+            MinQuery.each(e, function (k, v) {
+                // 处理场场景值
+                if (k === 'scene') {
+                    _rewrite_event[k] = v in wxLaunchScene ? wxLaunchScene[v] : [v, ''];
+                } else {
+                    _rewrite_event[k] = v;
+                }
+            })
+            // 冻结事件对象
+            Object.freeze(_rewrite_event);
             // 等待扩展固有事件方法的快速调用接口，每个固有事件处理器只能被注册一次
             if (ename === MinQuery.pageInheritEventKVPair.launch) {
                 // 设置已加载的页面的MQ实例
@@ -2329,11 +2473,11 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 MinQuery.isReady = false;
             };
             // 优先在事件管理器上查询并执行对应去掉on的自定义事件
-            let ret = eventHooks.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, e);
+            let ret = eventHooks.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, _rewrite_event);
             // 未查询到自定义事件是执行查询原始事件名称事件
             if (ret === '[No Handler]') {
                 // 查询执行元素原生事件
-                return eventHooks.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${ename}`, e);
+                return eventHooks.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${ename}`, _rewrite_event);
             } else {
                 return ret;
             }
@@ -2606,7 +2750,9 @@ const rootMinQuery = function (pageName, recoveryMode) {
     MinQuery.$pageInitObject = pageName == 'app' ? {
         "$selectorType": "$app",
         "$selectorName": "app",
-        "data": {}
+        "data": {
+            "$servers": MinQuery.$servers()
+        }
     } : {
             "$pageIndicator": MinQuery.pageName,
             "$selectorType": "$page",
@@ -2620,10 +2766,10 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 }),
                 // page的data和attr属性
                 "$data": {},
-                "$attr": {}
+                "$attr": {},
+                "$servers": MinQuery.$servers()
             }
         };
-
     // 下一步，使pageInit继承MinQuery，抽出MinQuery不在进行重复性的初始化，使用extend方法
     // Page主选择器
     let pageInit = function (selector) {
@@ -2688,9 +2834,9 @@ const rootMinQuery = function (pageName, recoveryMode) {
             return this;
         } else if (MinQuery.isFunction(selector)) {
             // 执行加载函数
-            if (!MinQuery.pageInjected) {
-                // 首先运行主体注册函数
-                let res = selector(MinQuery);
+            // 首先运行主体注册函数
+            let _exec_page = function () {
+                selector(MinQuery);
                 if (MinQuery.pageName === "app") {
                     MinQuery.extend(MinQuery.$pageInitObject, pageInheritEventHandlers);
                     // 启动当前小程序的App初始化函数
@@ -2702,10 +2848,22 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 }
                 // 设置ready标示
                 MinQuery.pageInjected = true;
-                return res;
-            } else {
-                return null;
+                return MinQuery;
             }
+            if (selector.name === '$__init__') {
+                setTimeout(() => {
+                    if (!MinQuery.pageInjected) {
+                        _exec_page();
+                    }
+                }, 5);
+            } else {
+                if (!MinQuery.pageInjected) {
+                    return _exec_page();
+                } else {
+                    return null;
+                }
+            }
+
         }
         // 返回数据源的MinQuery封装对象
         return MinQuery.makeArray(selector, this);
@@ -2777,6 +2935,17 @@ const rootMinQuery = function (pageName, recoveryMode) {
     });
     // 公用元素属性访问器
     MinQuery.fn.extend({
+        /**
+         * _type String 【必填】 属性名称
+         * handler Function 【可选】自定义操作方法，接收四个参数：ele_data_path[元素数据全路径]、ele_data[元素数据]、key[设置的数据键]、value[设置的数据键值];此方法会进行循环调用，this对象指向当前处理的元素数据。
+         * handler函数处理后的返回值可带两个指令性标示，分别是：
+         *      handler().$__returns__ //需要返回的内容
+         *      handler().$__force_return__  //强制返回$__returns__中的内容
+         *      handler().$__force_continue__  //强制忽略后续执行，并进入下一个循环
+         * 
+         * key String 【必填】键名称 
+         * value Anytype 【必填】 键值数据 
+         */
         eleAttrAccess(_type, handler, key, value) {
             let i = 0, len = this.length, ele;
             !MinQuery.isFunction(handler) && (handler = function () { });
@@ -2794,14 +2963,16 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 }
                 // 执行自定义处理器
                 let result = handler.call(ele, _path, _eledt, key, value);
-                if (!!result && result.$__force_return__) return result.returns;
+                // 强制进行数据返回
+                if (!!result && result.$__force_return__) return result.$__returns__;
+                // 强制忽略后续执行，并进入下一个循环
                 if (!!result && result.$__force_continue__) continue;
-                if (typeof key === "string") {
+                if (MinQuery.isString(key)) {
                     if (value) setCurrentPageData(_path, value);
                     else {
                         return _eledt ? MinQuery.getData(_eledt, key) : undefined;
                     }
-                } else return undefined;
+                } else return _eledt;
             }
             return this;
         }
@@ -2810,15 +2981,30 @@ const rootMinQuery = function (pageName, recoveryMode) {
     MinQuery.fn.extend({
         // 设置当前元素data值
         data(key, value) {
-            return this.eleAttrAccess('$data', null, key, value);
+            if (MinQuery.isPlainObject(key)) {
+                MinQuery.each(key, function (_k, _v) {
+                    this.eleAttrAccess('$data', null, _k, _v);
+                })
+                return this;
+            } else return this.eleAttrAccess('$data', null, key, value);
         },
         attr(key, value) {
-            return this.eleAttrAccess('$attr', null, key, value);
+            if (MinQuery.isPlainObject(key)) {
+                MinQuery.each(key, function (_k, _v) {
+                    this.eleAttrAccess('$attr', null, _k, _v);
+                })
+                return this;
+            } else return this.eleAttrAccess('$attr', null, key, value);
         },
+        /**
+         * config方法允许使用键值对形式进行配置设置，并且可在元素事件操作中进行config的调用，例如
+         * let _ele = $('.ele').config();
+         * 
+         */
         config(key, value) {
             return this.eleAttrAccess('$cf', function (_path, _eledata, k, v) {
                 let _cf = elem_priv.get(this, "$cf-configuration"), plainKey = false, stringKey = false;
-                if (MinQuery.isString(k) && !!v || (plainKey = MinQuery.isPlainObject(k))) {
+                if ((stringKey = MinQuery.isString(k)) && !!v || (plainKey = MinQuery.isPlainObject(k))) {
                     if (plainKey) {
                         $.each(k, (kk, kv) => {
                             kk = `${_path}`;
@@ -2833,7 +3019,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                     return {
                         $__force_continue__: true
                     }
-                } else if (!k || (stringKey = MinQuery.isString(k)) && !v) {
+                } else if (!k || stringKey && !v) {
                     let operate = {};
                     if (stringKey) operate = _cf[k].get();
                     else {
@@ -2849,10 +3035,24 @@ const rootMinQuery = function (pageName, recoveryMode) {
                     }
                     return {
                         $__force_return__: true,
-                        returns: operate
+                        $__returns__: operate
                     }
                 }
             }, key, value);
+        },
+        text(text) {
+            let i = 0, len = this.length, ele;
+            for (; i < len;) {
+                ele = this[i++];
+                // 获取当前样式的JSON格式
+                let _text = ele.$text;
+                if (!!text) {
+                    _text = text;
+                } else return text;
+                // 设置样式属性到视图更新
+                setCurrentPageData(`${ele.$selectorType}.${ele.$selectorName}.$text`, _text);
+            }
+            return this;
         },
         // animation delay
         delay(time) {
@@ -3000,7 +3200,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             let i = 0, len = this.length, ele;
             for (; i < len;) {
                 ele = this[i++];
-                // 获取当前样式的JSON格式
+                // 获取当前样式的JSON格式    
                 let styleJson = !!animationKey ? ele[animationKey] : ele.$style;
                 // 清除cssAnimation残余的transition
                 styleJson = MinQuery.styleExtend(styleJson, `transition: none;`);
@@ -3099,7 +3299,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             return MinQuery(this).toggleClass(classOne, classTwo, true);
         }
     });
-    // Canvas 操作
+    // 组件操作
     MinQuery.fn.extend({
         canvas(operationCall, extraMovementCall) {
             let i = 0, len = this.length, ele, cobj = {};
@@ -3158,7 +3358,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 ele = this[i++];
                 let vid = ele.$selectorName,
                     context = MinQuery.audio.call(ele, vid);
-                MinQuery.isString(src) && context.setSrc(src);
+                if (MinQuery.isString(src)) { autoMendServer(src, 'audioServer'); context.setSrc(src); }
                 // 每次均返回context上下文，便于自定义使用外部方法进行画布的编辑工作
                 if (len > 1) cobj[ele.$selectorName] = context;
                 else return context;
@@ -3232,112 +3432,152 @@ const rootMinQuery = function (pageName, recoveryMode) {
     let __registeredDataHooks__ = {};
     let __dataHooks__ = {
         // 获取
+        /**
+         * 传入的key可以是返回对象的查询字段名，也可以是全路径
+         * key [key] 或 [a.b.c]
+         */
         get(key) {
-            key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
-            if(MinQuery.isArray(this.__path__)){
-                var _gt = {},_kn = this.__hooks__;
-                MinQuery.each(this.__path__,function(i,pt){
-                    _gt[_kn[i]] = MinQuery.getData(pt + key);
-                });
-                return _gt;
-            } else return MinQuery.getData(this.__path__ + key);
+            var _key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
+            // 多键设置
+            if (MinQuery.isArray(this.__path__)) {
+                var _gt, _kn = this.__hooks__;
+                // 如果是多键形式，则直接进行根域查询
+                if (key.indexOf('.') != -1) {
+                    return MinQuery.getData(key);
+                } else {
+                    MinQuery.each(this.__path__, function (i, pt) {
+                        if (_kn[i] == key) {
+                            _gt = MinQuery.getData(pt);
+                        }
+                    });
+                    return _gt;
+                }
+            } else {
+                // 单键设置
+                return MinQuery.getData(this.__path__ + _key);
+            }
         },
         // 对象操作
         // 修改当前对象中对应的键值
         set(key, value) {
             if (!value) { value = key; key = null }
-            key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
-            setCurrentPageData(this.__path__ + key, value);
+            var _key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
+            // 多字段设置
+            if (MinQuery.isArray(this.__path__) && !!key) {
+                var _kp = this.__path__;
+                // 如果是多键形式，则直接进行根域数据设置
+                if (key.indexOf('.') != -1) {
+                    return setCurrentPageData(key, value);
+                } else {
+                    MinQuery.each(this.__hooks__, function (i, hn) {
+                        console.log(hn[i], _kp[i], key);
+                        if (hn == key) {
+                            setCurrentPageData(_kp[i], value);
+                        }
+                    });
+                }
+            } else {
+                // 当前子段设置
+                setCurrentPageData(this.__path__ + _key, value);
+            }
+            return this;
         },
         // 将当前或某一字段设置为null，或指定的值
         clear(key, _type) {
             if (!MinQuery.isUndefined(key) && MinQuery.isUndefined(_type)) { _type = key; key = null };
             key = !!key ? `.${key}` : "";
             _type = !MinQuery.isUndefined(_type) ? _type : null;
-            if(MinQuery.isArray(this.__path__)){
+            if (MinQuery.isArray(this.__path__)) {
                 let _clear = {};
-                MinQuery.each(this.__path__,function(i,pt){
+                MinQuery.each(this.__path__, function (i, pt) {
                     _clear[pt + key] = _type;
                 });
                 setCurrentPageData(_clear);
             } else setCurrentPageData(this.__path__ + key, _type);
+            return this;
         },
         // 数组操作：不支持多字段跟字段操作
         // 如果当前或某一子字段为数组形式，则可以使用此接口进行项目添加
-        append(value, isExtend) {
+        append(value, isBatch) {
             if (!value) {
                 return;
             }
-            let _old_val, _path = this.__path__;
-            _old_val = MinQuery.getData(_path);
+            let _path = this.__path__, _old_val = MinQuery.getData(_path), r_index;
             if (MinQuery.isArray(_old_val)) {
                 // 支持传入数组继承到源素组
-                if (MinQuery.isArray(value) && isExtend === true) {
-                    _old_val.concat(value);
+                if (MinQuery.isArray(value) && isBatch === true) {
+                    _old_val = _old_val.concat(value);
                 } else {
                     _old_val.push(value);
                 }
+                r_index = _old_val.length - 1;
                 setCurrentPageData(_path, _old_val);
             }
+            return r_index;
         },
-        prepend(value, isExtend) {
+        prepend(value, isBatch) {
             if (!value) {
                 return;
             }
-            let _old_val, _path = this.__path__;
-            _old_val = MinQuery.getData(_path);
+            let _path = this.__path__, _old_val = MinQuery.getData(_path), r_index;
             if (MinQuery.isArray(_old_val)) {
-                if (MinQuery.isArray(value) && isExtend === true) {
-                    value.concat(_old_val);
+                if (MinQuery.isArray(value) && isBatch === true) {
+                    _old_val = value.concat(_old_val);
+                    r_index = value.length - 1;
                 } else {
                     _old_val.unshift(value);
+                    r_index = 0;
                 }
                 setCurrentPageData(_path, _old_val);
             }
+            return r_index;
         },
         // 在数组的某一个索引后添加元素
-        after(index, value, extend) {
-            let _old_val, _path = this.__path__;
-            _old_val = MinQuery.getData(_path);
+        after(index, value, isBatch) {
+            let _path = this.__path__, _old_val = MinQuery.getData(_path), r_index;
             // 仅对数组类型数据进行修改尝试
             if (MinQuery.isArray(_old_val)) {
-                if (MinQuery.isArray(value) && isExtend === true) {
+                if (MinQuery.isArray(value) && isBatch === true) {
                     let _len = _old_val.length, _bef = _old_val.slice(0, index), _af = _old_val.slice(index, _len);
-                    _bef.concat(value);
-                    _bef.concat(_af);
-                    _old_val = _bef;
+                    _old_val = _bef.concat(value, _af);
+                    r_index = _bef.length + value.length - 1;
                 } else {
                     _old_val.splice(index + 1, 0, value);
+                    r_index = index;
                 }
                 setCurrentPageData(_path, _old_val);
             }
+            return r_index;
         },
         // 在数组的某一个索引前添加元素
-        before(index, value, extend) {
-            let _old_val, _path = this.__path__;
-            _old_val = MinQuery.getData(_path);
+        before(index, value, isBatch) {
+            let _path = this.__path__, _old_val = MinQuery.getData(_path), r_index;
             // 仅对数组类型数据进行修改尝试
             if (MinQuery.isArray(_old_val)) {
-                if (MinQuery.isArray(value) && isExtend === true) {
+                if (MinQuery.isArray(value) && isBatch === true) {
                     index = index + 1;
                     let _len = _old_val.length, _bef = _old_val.slice(0, index), _af = _old_val.slice(index, _len);
                     _old_val = _bef.concat(value, _af);
+                    r_index = _bef.length + value.length - 1;
                 } else {
                     _old_val.splice(index, 0, value);
+                    r_index = index;
                 }
                 setCurrentPageData(_path, _old_val);
             }
+            return r_index;
         },
         // 在删除某个数组中的指定元素
         remove(key, index) {
             if (MinQuery.type(key) === 'number') { index = key; key = null }
-            let _old_val, _path = this.__path__ + (!!key ? `.${key}` : "");
-            _old_val = MinQuery.getData(_path);
+            let _path = this.__path__ + (!!key ? `.${key}` : ""), _old_val = MinQuery.getData(_path), r_index;
             // 仅对数组类型数据进行修改尝试
             if (MinQuery.isArray(_old_val)) {
                 _old_val.splice(index, 1);
                 setCurrentPageData(_path, _old_val);
+                r_index = index;
             }
+            return r_index;
         }
     };
     // 设置数据[keyString'设置查询的字符串'，keyValue'设置值']
@@ -3357,6 +3597,9 @@ const rootMinQuery = function (pageName, recoveryMode) {
             keyString = {
                 [keyString]: keyValue
             }
+        } else {
+            detecteInerit = stayFormat;
+            stayFormat = keyValue;
         }
         if (!MinQuery.isPlainObject(keyString))
             return;
@@ -3383,17 +3626,27 @@ const rootMinQuery = function (pageName, recoveryMode) {
 
             // 获取操作key的最后一位，作为当前返回操作的标识
             fk = ka[ka.length - 1];
+            // 若当前后缀已经被上一个数据对象占用，则直接使用全路径
+            if (fk in returns) {
+                fk = ka;
+            }
             // 设置returns的同时挂载到dataHook上；
             returns[fk] = {
                 // 操作hook的目标查询路径
                 __path__: k
             }
-            MinQuery.extend(returns[fk],__dataHooks__);
-            __registeredDataHooks__[ka] = returns[fk];
-            returns.__length__ ++;
-            returns.__hooks__.push(fk);
-            // 根事件
-            returns.__path__.push(k);
+            if (ka in __registeredDataHooks__) {
+                returns[fk] = __registeredDataHooks__[ka];
+            } else {
+                MinQuery.extend(returns[fk], __dataHooks__);
+                __registeredDataHooks__[ka] = returns[fk];
+                // 当前返回的数据操作hook数
+                returns.__length__++;
+                // 数据调用名
+                returns.__hooks__.push(fk);
+                // 数据访问路径
+                returns.__path__.push(k);
+            }
         }
         ;
         if (!_$.isEmptyObject(keyString)) {
@@ -3404,11 +3657,11 @@ const rootMinQuery = function (pageName, recoveryMode) {
             MinQuery.dataProcessor(MinQuery.$pageInitObject.data, keyString);
         }
         // 如果
-        if(stayFormat !== true && returns.__length__ === 1) {
+        if (stayFormat !== true && returns.__length__ === 1) {
             returns = returns[returns.__hooks__[0]]
         } else {
             // 多个字段时，在根节点上挂载处理方法
-            MinQuery.extend(returns,__dataHooks__);
+            MinQuery.extend(returns, __dataHooks__);
         }
         // 返回一个后期操作hook，
         return returns;
@@ -3423,21 +3676,22 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 keys = queryObj;
                 queryObj = MinQuery.$pageInitObject.data;
             };
-            return MinQuery.dataProcessor(queryObj, keys);
+            let res = MinQuery.dataProcessor(queryObj, keys);
+            return res;
         },
         // 设置键值数据，保证Page数据与框架数据的同步性
         // 此接口主要供给插件访问接口
         setData(keyString, keyValue, stayFormat, forceAccess) {
+            if (MinQuery.isString(keyString) && MinQuery.isUndefined(keyValue)) {
+                // setData Hook 访问器，可在访问的同时设置一次当前数据Hook的值
+                let _hook = __registeredDataHooks__[keyString];
+                if (_hook) {
+                    return _hook;
+                } else return undefined;
+            }
+
             // 修改并使用Page实例对象中的setData原生方法同步数据
             return setCurrentPageData(keyString, keyValue, !!stayFormat ? stayFormat : false, MinQuery.type(forceAccess) === "boolean" ? !forceAccess : true);
-        },
-        // setData Hook 访问器，可在访问的同时设置一次当前数据Hook的值
-        dataAccess(keyString, keyValue) {
-            if (MinQuery.isString(keyString)) {
-                let _hook = __registeredDataHooks__[keyString];
-                if (keyValue) _hook.set(keyValue);
-                return _hook;
-            } else return undefined;
         },
         /** 用于检测数据变化，接收一个查询key组成的字符串和一个改变触发匿名处理函数;
          *  @param: fuzzy 参数为可选参数,类型为Boolean。设置为true时则对key字符串进行模糊匹配，而非绝对匹配
@@ -3471,25 +3725,93 @@ const rootMinQuery = function (pageName, recoveryMode) {
     return MinQuery;
 }
 // 抛出接口
-module.exports = wx.MinQuery = {
-    load(pageName, recoveryMode) {
-        if (typeof pageName !== "string") {
-            console.error(`MinQuery instance loader a string page name, not this:`, pageName);
-            return;
-        }
-        // 做降级转换提高选择器准确性
-        pageName = pageName.toLowerCase();
-        // 检测页面是否被注册
-        if (pageName in $pageMQRegisterInstances) {
-            console.error(`The Page name [${pageName}] has been registered!`);
-            return;
-        }
-        $pageMQRegisterInstances[pageName] = {
-            registered: true
-        };
-        return rootMinQuery(pageName, recoveryMode);
-    },
-    page(pageName) {
-        return $pageLoadedInstances.get(pageName);
+module.exports = wx.MinQuery = function (pageName, recoveryMode) {
+    if (typeof pageName !== "string") {
+        console.error(`MinQuery instance loader a string page name, not this:`, pageName);
+        return;
     }
+    // 做降级转换提高选择器准确性
+    pageName = pageName.toLowerCase();
+    // 检测页面是否被注册
+    if (pageName in $pageMQRegisterTags) {
+        console.error(`The Page name [${pageName}] has been registered!`);
+        return;
+    }
+    $pageMQRegisterTags[pageName] = {
+        registered: true
+    };
+
+    const _MQ = rootMinQuery(pageName, recoveryMode);
+    _MQ(function $__init__() { console.info('自动执行Page()方法进行页面初始化！！注意：请在复杂页面逻辑的情况下调用$(()=>{})主执行方法来执行数据和事件的绑定操作，确保事件和数据的有效注入。不然可能会因为异步逻辑执行时差不一而导致报错，或数据和事件无法正确的被注入到Page()实例当中！') });
+    return _MQ;
 };
+
+
+
+// (function (source,key,value, _$) {
+// 	if (!_$.isPlainObject(source)) return undefined;
+// 	if (!key) return source;
+
+// 	let keyIsString = _$.isString(key),
+// 		keyIsPlainObject = _$.isPlainObject(key),
+// 		valueIsUndefined = _$.isUndefined(value),
+// 		//判断是否为获取数据，只能进行单个键值数据获取
+// 		dataRequire = keyIsString && valueIsUndefined,
+// 		//设置数据时
+// 		dataSetters =  keyIsPlainObject ? key : {};
+// 	//将数据进行键值对设置
+// 	if(keyIsString) dataSetters[key] = !dataRequire ? value : undefined;
+
+// 	// dataRequire模式，不存在则返回false，并终止；
+// 	// 非dataRequire模式，将自动初始化对象的值为指定的objInit值
+// 	let detecteAndInit = function (_data, key, objInit) {
+// 		if (!(key in _data)) {
+// 			if (dataRequire) {
+// 				return false;
+// 			} else {
+// 				_data[key] = objInit
+// 				return true;
+// 			}
+// 		} else {
+// 			return true;
+// 		}
+// 	};
+
+// 	let dataAccess = function (_source,_key,_val) {
+// 		if (_$.isUndefined(_key)) return _source;
+
+// 		let _select_source,_split_k = _key.split('.');
+
+// 		let traverseKey = function (_tra_so,_sin_k) {
+// 			if (_$.isString(_sin_k) && _$.trim(_sin_k) !== ''){
+// 				let _arrK = _sin_k.match(/\[(\d+)\]/g),_strK = _sin_k.replace(_arrK.join(""),"");
+// 				if (_$.trim(_strK) !== ''){
+// 					_tra_so = _tra_so[_strK];
+// 				}
+// 				if (_arrK.length > 0){
+//                     _$.each(_arrK,function(i,ak){
+
+//                     })
+//                 }
+
+// 				return _tra_so;
+// 			} else {
+// 				return _tra_so;
+// 			}
+// 		}
+// 		_$.each(_split_k,function(i,mulK){
+//             _select_source = traverseKey(_source,mulK);
+//         })
+// 		if(_val) _select_source = _val;
+// 		 else return _select_source;
+// 	};
+// 	//如果是获取值则直接查询
+// 	if (dataRequire) return dataAccess(source,key);
+// 	//如果是设置值，则进行对象循环设置
+// 	else _$.each(dataSetters,function (set_k,set_v) {
+// 		dataAccess(source,set_k,set_v);
+// 	})
+
+
+
+// })({a:{b:1}},'a.b', 3, $);

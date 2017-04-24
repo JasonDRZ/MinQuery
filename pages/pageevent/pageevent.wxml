@@ -1,0 +1,17 @@
+
+<!--index.wxml-->
+<view class="operation_block">
+  <view class="block_title">Page自定义事件绑定</view>
+  <view class="block_body">
+    <view class="dataset-object">
+      Author: {{author}};
+    </view>
+    <view class="dataset-object">
+      Gander: {{gander}};
+    </view>
+     <view class="dataset-object">
+      Work: {{work}};
+    </view>
+    <button type="primary" bindtap="changeAuther">触发自定义事件</button>
+  </view>
+</view>

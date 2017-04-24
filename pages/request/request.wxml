@@ -1,0 +1,14 @@
+
+<!--index.wxml-->
+<view class="operation_block">
+  <view class="block_title">远程数据-Comments</view>
+  <view class="block_body">
+    <view wx:for="{{items}}" class="dataset-object">
+      <view style="color: #e32e2e;font-size: 16px;">Title: {{item.title}}</view>
+      Content: {{item.body}}
+    </view>
+    <button type="primary" id="edit_first" bindtap="$bind">Edit first comment</button>
+    <button type="primary" id="add_comment" bindtap="$bind">Add a comment</button>
+    <button type="primary" id="delete_comment" bindtap="$bind">Delete a comment</button>
+  </view>
+</view>

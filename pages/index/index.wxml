@@ -7,6 +7,11 @@
   </view>
 </view>
 <view class="cotainer">
-  <view class="guide-item" data-m-class="navigater" data-url='../dataset/dataset' bindtap="$bind">数据设置</view>
-  <view class="guide-item" data-m-class="navigater" data-url='../dataset/dataset' bindtap="$bind">数据设置</view>
+  <view class="guide-item" data-m-class="navigater" data-url='pageevent' bindtap="$bind">Page事件绑定</view>
+  <view class="guide-item" data-m-class="navigater" data-url='dataset' bindtap="$bind">数据设置</view>
+  <view class="guide-item" data-m-class="navigater" data-url='elements' bindtap="$bind">元素操作及事件绑定</view>
+  <view class="guide-item" data-m-class="navigater" data-url='request' bindtap="$bind">Ajax请求</view>
+  <view class="guide-item" data-m-class="navigater" data-url='components' bindtap="$bind">视图组件</view>
+  <view class="guide-item" data-m-class="navigater" data-url='form' bindtap="$bind">表单方法</view>
+  <view class="guide-item" data-m-class="navigater" data-url='simple_app' bindtap="$bind">简单app</view>
 </view>

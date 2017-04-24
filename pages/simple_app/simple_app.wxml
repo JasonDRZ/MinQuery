@@ -1,7 +1,7 @@
 
 <!--index.wxml-->
 <view class="operation_block">
-  <view class="block_title">对象数据设置</view>
+  <view class="block_title">Page自定义事件绑定</view>
   <view class="block_body">
     <view class="dataset-object">
       Author: {{author}};
@@ -12,10 +12,7 @@
      <view class="dataset-object">
       Work: {{work}};
     </view>
-    <button type="primary" id="change_author" bindtap="$bind">修改作者</button>
-    <button type="primary" id="get_author" bindtap="$bind">{{$id.get_author.$text ? $id.get_author.$text : "爱好之一:"}} {{author_hobby}}</button>
-    <button type="primary" id="change_info" bindtap="$bind">修改信息</button>
-    <button type="warn" id="delete_info" bindtap="$bind">删除数据</button>
+    <button type="primary" bindtap="changeAuther">触发自定义事件</button>
   </view>
 </view>
 <view class="operation_block">

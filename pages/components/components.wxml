@@ -1,0 +1,15 @@
+
+<!--index.wxml-->
+<view class="operation_block">
+  <view class="block_title">Swiper组件</view>
+  <view class="block_body">
+    <swiper id='swiper_id' indicator-dots="{{$id.swiper_id.$cf.indicatorDots}}" autoplay="{{$id.swiper_id.$cf.autoplay}}" current="{{$id.swiper_id.$cf.current}}" interval="{{$id.swiper_id.$cf.interval}}" duration="{{$id.swiper_id.$cf.duration}}" bindchange="$bind" bindtouchstart="$bind" bindtouchend="$bind">
+      <block wx:for="{{$id.swiper_id.$data.banner}}">
+        <swiper-item width="$window.width" height="150" class="banner_item" style="background-image: url({{item}});">
+        </swiper-item>
+      </block>
+    </swiper>
+    <view style="line-height: 2em">当前是第 {{$id.swiper_id.$data.current}} 张</view>
+    <button type="primary" id="slide_to_first" bindtap="$bind">滑到第一张</button>
+  </view>
+</view>

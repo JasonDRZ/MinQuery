@@ -2,8 +2,11 @@
 let $ = wx.MinQuery('index');
 
 $(function(){
+  // console.info($.getData('$servers'));
   $('.navigater').on('tap',function(e){
+  	console.log(e);
     let _url = e.data('url');
+    console.info($.$servers());
     $.navigateTo(_url);
   })
 })

@@ -1,28 +1,32 @@
 //app.js
 // var loadPlugin = require("../../plugins/loader").load;
 // var $ = require("MinQuery.1.0.2.min").load("app");
-var $ = require("MinQuery/index")("app");
-// $.app(function(){
-//   this.on("launch",function(){
+require("MinQuery/index");
+wx.MinQuery.debug(true,function(errors){
+  console.log(errors);
+});
 
-//   });
+let $ = wx.MinQuery("app");
+
 $(()=>{
+  // 设置ajax请求服务器
+  $.$servers('ajaxServer','https://jsonplaceholder.typicode.com/');
   var app = $("app");
   var globalData = $.setData('globalData',{});
   var arrayData = $.setData("items",[['inner1']]);
-  arrayData.append("第一个item");
-  arrayData.append(0,"第2个inner");
-  arrayData.prepend("prepend的item");
-  arrayData.after(1,"after insert");
-  arrayData.before(0,"before insert");
-  app.on('launch',function(){
-    console.info("App has onLaunched!!!!!!!!!!!!!!!")
-  }).bind('userLogin',function(cb){
+  app.on('launch',function(e){
+    // 这里的scene字段做了调整，新的scene字段是一个类型数组，第一个元素为进入场景类型编码，第二个字段是场景类型的官方描述。
+    // 这样的方式方便开发过程中进行有效的验证和描述查看，不需要每次都查看开发文档进行一一对照。
+    console.info("App has onLaunched!!!!!!!!!!!!!!!",e)
+  })
+  
+  .bind('userLogin',function(cb){
     console.log(cb);
     $.$call(cb.call,"尼玛，传过来了！！")
     $.showLoading('登录中。。。。');
     $.hideLoading(3000);
   }).data("userInfo","用户信息！！！");
+  
   $.$on('getUserInfo',function(cb){
     var userInfo = globalData.get('userInfo');
     if(!!userInfo){
@@ -41,10 +45,16 @@ $(()=>{
       })
     }
   })
-
-  console.log($.getData('globalData'),app)
 })
 
+// ,
+//     "pages/dataset/dataset",
+//     "pages/pageevent/pageevent",
+//     "pages/request/request",
+//     "pages/form/form",
+//     "pages/components/components",
+//     "pages/simple_app/simple_app",
+//     "pages/elements/elements"
 
 // })
 
