@@ -5,7 +5,7 @@
   <view class="block_body">
     <swiper id='swiper_id' indicator-dots="{{$id.swiper_id.$cf.indicatorDots}}" autoplay="{{$id.swiper_id.$cf.autoplay}}" current="{{$id.swiper_id.$cf.current}}" interval="{{$id.swiper_id.$cf.interval}}" duration="{{$id.swiper_id.$cf.duration}}" bindchange="$bind" bindtouchstart="$bind" bindtouchend="$bind">
       <block wx:for="{{$id.swiper_id.$data.banner}}">
-        <swiper-item width="$window.width" height="150" class="banner_item" style="background-image: url({{item}});">
+        <swiper-item width="$window.width" height="150" bindtap="$bind" data-m-class='banner_item' class="banner_item" style="background-image: url({{item}});">
         </swiper-item>
       </block>
     </swiper>
@@ -13,3 +13,10 @@
     <button type="primary" id="slide_to_first" bindtap="$bind">滑到第一张</button>
   </view>
 </view>
+<view class="operation_block">
+  <view class="block_title">Canvas组件</view>
+  <view class="block_body">
+    
+  </view>
+</view>
+<canvas canvas-id="myCanvas" id='myCanvas' disable-scroll="{{true}}" style="border: 1px solid;" bindtouchmove="$bind"/>

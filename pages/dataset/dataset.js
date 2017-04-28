@@ -11,6 +11,17 @@ let items = $.setData('items', [1, 2, 3, 4]);
 let _multi_level = $.setData('multis', { info: { hobbies: ['Football', 'PingPang', 'Basketball'] } });
 let _multi_level_2 = $.setData('multis_2', [{ info_1: { hobbies: ['Football', 'PingPang', 'Basketball'] } }, { info_2: { hobbies: ['Football', 'PingPang', 'Basketball'] } }]);
 
+// 数据监听，全路径精确监听，只有当修改数据的键完全等于监听字段时，才会触发
+$.watch('items',function(newV,oldV,path){
+  console.log(newV,oldV,path);
+})
+
+// 模糊数据监听，只要存在类似字段被修改，则触发。
+$.watch('hobbies',function(newV,oldV,path){
+  console.log(newV,oldV,path);
+  console.log($.getData(path));
+},true)
+
 // 主函数必须运行，但元素的事件绑定及数据操作并不依赖于主函数执行。
 $(function () {
   console.info('复杂执行逻辑请一定使用此主运行方法来执行Page对象的自定义事件、数据绑定操作，确保自定义事件和数据的正确注入');

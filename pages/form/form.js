@@ -15,15 +15,6 @@ const _page = $('page');
 
 // 主函数必须运行，但元素的事件绑定及数据操作并不依赖于主函数执行。
 $(function () {
-  console.info('复杂执行逻辑请一定使用此主运行方法来执行Page对象的自定义事件、数据绑定操作，确保自定义事件和数据的正确注入');
-
-
-  $.get('https://jsonplaceholder.typicode.com/posts/1').success(function(re){
-    console.info(re);
-  }).fail(function(er){
-    console.error(er);
-  })
-
   // 单个数据设置字段进行更新
   _page.bind('changeAuther', function () {
     author.set('I am JasonD');

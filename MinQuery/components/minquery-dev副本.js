@@ -567,17 +567,17 @@ let _classTypeInitial = [false, 0, '', function () { }, [], Date.now(), new RegE
     typeInitial[_l_name] = _classTypeInitial[i];
 });
 
-let debugMode = false,errorHandler;
+let debugMode = false ;
 // MinQuery 错误事件捕捉器
-const $errorCarry = function (context,fn) {
-    let _fn_ret,args = [].slice.call(arguments, 2);
+const $errorCarry = function (fn) {
+    let _fn_ret;
     if (debugMode) {
         try {
-            _fn_ret = fn.apply(context? context : null, args);
+            _fn_ret = fn.apply(null, [].slice(arguments, 1));
         } catch (e) {
-            typeof errorHandler == 'function' ? errorHandler(e) : console.error(e);
+            console.error(e);
         }
-    } else _fn_ret = fn.apply(context? context : null, args);
+    } else _fn_ret = fn.apply(null, [].slice(arguments, 1));
     return _fn_ret;
 }
 
@@ -1084,13 +1084,13 @@ const wxMethodsCallbackGenerate = function (methodName, _options, wrapperCall, c
         _$.isPlainObject(options) && $extend(options, {
             fail(e) {
                 // 运行外部分离的场景处理函数
-                'fail' in _backup && $errorCarry(null,_backup['fail'], e);
+                'fail' in _backup && $errorCarry(_backup['fail'], e);
             },
             success(e) {
-                'success' in _backup && $errorCarry(null,_backup['success'], e);
+                'success' in _backup && $errorCarry(_backup['success'], e);
             },
             complete(e) {
-                'complete' in _backup && $errorCarry(null,_backup['complete'], e);
+                'complete' in _backup && $errorCarry(_backup['complete'], e);
                 // 支持Then.js的链式反应链
                 let _msg = e.errMsg.split(":"), _err = null, _data;
                 if (_msg[1] === "ok") {
@@ -1099,14 +1099,14 @@ const wxMethodsCallbackGenerate = function (methodName, _options, wrapperCall, c
                 } else {
                     _err = e;
                 }
-                _$.isFunction(_continue_func) && $errorCarry(null,_continue_func, _err, _data);
+                _$.isFunction(_continue_func) && $errorCarry(_continue_func, _err, _data);
             },
             cancel(e) {
-                'cancel' in _backup && $errorCarry(null,_backup['cancel'], e);
+                'cancel' in _backup && $errorCarry(_backup['cancel'], e);
             }
         });
         _$.isFunction(wrapperCall)
-            ? $errorCarry(null,wrapperCall, context[methodName], options)
+            ? $errorCarry(wrapperCall, context[methodName], options)
             : _$.isArray(options) ? context[methodName].apply(null, options) : context[methodName].call(null, options);
         // 支持then.js
         const _suport_then = function (cont) {
@@ -2217,12 +2217,13 @@ const rootMinQuery = function (pageName, recoveryMode) {
      */
     MinQuery.extend({
         $apply(_tar, argsArr) {
-            MinQuery.isFunction(_tar) && $errorCarry(this,_tar,argsArr);
+            let _this = this;
+            MinQuery.isFunction(_tar) && $errorCarry(function () { _tar.apply(_this, argsArr) });
         },
         $call() {
-            let args = slice.call(arguments), _tar = args[0];
+            let args = slice.call(arguments), _tar = args[0], _this = this;
             args.shift();
-            MinQuery.isFunction(_tar) && $errorCarry(this,_tar,args); 
+            MinQuery.isFunction(_tar) && $errorCarry(function () { _tar.apply(_this, args) });
         }
     })
 
@@ -2369,8 +2370,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                             // 触发根节点绑定事件
                             if (_type in this && MinQuery.isFunction(this[_type])) {
                                 res = this[_type](data);
-                                MinQuery.isFunction(triggerCall) && $errorCarry(null,triggerCall, { "$data": data, "$res": res });
-                                // MinQuery.isFunction(triggerCall) && triggerCall({ "$data": data, "$res": res });
+                                MinQuery.isFunction(triggerCall) && $errorCarry(triggerCall, { "$data": data, "$res": res });
                             };
                         }
                     } else {
@@ -2379,8 +2379,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                         // 触发传递数据，并接收返回数据
                         res = eventHooks.get(eroute, {}, data);
                         // 执行callback
-                        MinQuery.isFunction(triggerCall) && $errorCarry(null,triggerCall, { "$data": data, "$res": res });
-                        // MinQuery.isFunction(triggerCall) && triggerCall({ "$data": data, "$res": res });
+                        MinQuery.isFunction(triggerCall) && $errorCarry(triggerCall, { "$data": data, "$res": res });
                     }
                 })
             }
@@ -2397,7 +2396,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 let eroute;
                 this.each(function () {
                     eventHooks.set(this, `${triggerType}.${_type}`, false);
-                    MinQuery.isFunction(offCall) && $errorCarry(this,offCall);
+                    MinQuery.isFunction(offCall) && $errorCarry(function () { offCall.call(_this) });
                 })
             }
             return this;
@@ -2455,14 +2454,14 @@ const rootMinQuery = function (pageName, recoveryMode) {
         MinQuery.pageInheritEventList = $mq_config.appEvents;
         pageEventMiddleware = function (e, ename) {
             var _rewrite_event = {};
-            MinQuery.isPlainObject(e) && MinQuery.each(e, function (k, v) {
+            MinQuery.each(e, function (k, v) {
                 // 处理场场景值
                 if (k === 'scene') {
                     _rewrite_event[k] = v in wxLaunchScene ? wxLaunchScene[v] : [v, ''];
                 } else {
                     _rewrite_event[k] = v;
                 }
-            });
+            })
             // 冻结事件对象
             Object.freeze(_rewrite_event);
             // 等待扩展固有事件方法的快速调用接口，每个固有事件处理器只能被注册一次
@@ -2603,7 +2602,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             // 查询注册扩展事件
             let regObj = eventEle ? MinQuery.getData(eventEle, `registerEvent.${eventkeys.split(".").pop()}`) : false,
                 // 将事件绑定的data数据绑定到eventdata事件数据的$data字段上
-                dataArr = [], ei = 0, eleContext = !!eventEle ? MinQuery.getData(eventEle.context) : null;
+                dataArr = [], ei = 0, eleContext = MinQuery.getData(eventEle.context);
             if (!!eventObj && !!eventObj.active) {
                 // 将绑定数据挂在到event数据上的$data属性上
                 if (!!eventdata) {
@@ -2619,17 +2618,13 @@ const rootMinQuery = function (pageName, recoveryMode) {
                         : (dataArr[ei] = triggerdata);
                 };
                 // 处理批量registerEvent方法
+
                 !!regObj && regObj.method && MinQuery.each(regObj.method, (i, reg) => { 
-                    MinQuery.isFunction(reg) && $errorCarry(null,function(){
-                        reg.apply(eleContext,dataArr);
-                    });
+                    MinQuery.isFunction(reg) && $errorCarry(function () { reg.apply(eleContext, dataArr) }) 
                 });
 
                 let _method_return;
-                _method_return = MinQuery.isFunction(eventObj.method) ? $errorCarry(null,function(){
-                    return eventObj.method.apply(eleContext,dataArr);
-                })
-                : noFunc;
+                _method_return = MinQuery.isFunction(eventObj.method) ? $errorCarry(function () { return eventObj.method.apply(eleContext, dataArr) }) : noFunc;
                 // 返回绑定当前域的处理方法，返回处理后的数据
                 return _method_return
             } else {
@@ -2853,36 +2848,35 @@ const rootMinQuery = function (pageName, recoveryMode) {
         } else if (MinQuery.isFunction(selector)) {
             // 执行加载函数
             // 首先运行主体注册函数
-            // let _exec_page = function () {
-                
-            // }
-            // if (selector.name === '$__init__') {
-            //     setTimeout(() => {
-            //         if (!MinQuery.pageInjected) {
-            //             _exec_page();
-            //         }
-            //     }, 5);
-            // } else {
-            //     if (!MinQuery.pageInjected) {
-            //         return _exec_page();
-            //     } else {
-            //         return null;
-            //     }
-            // }
-            $errorCarry(MinQuery,selector,MinQuery);
-            // selector(MinQuery);
-            if (MinQuery.pageName === "app") {
-                MinQuery.extend(MinQuery.$pageInitObject, pageInheritEventHandlers);
-                // 启动当前小程序的App初始化函数
-                App(MinQuery.$pageInitObject);
-            } else {
-                MinQuery.extend(MinQuery.$pageInitObject, elementEventHandlers, pageInheritEventHandlers);
-                // 启动当前页面的Page初始化函数，判断模式：恢复模式，则传入copy初始化数据；非恢复模式则传入源数据；
-                Page(!!recoveryMode ? (MinQuery.extend(true, {}, MinQuery.$pageInitObject)) : MinQuery.$pageInitObject);
+            let _exec_page = function () {
+                $errorCarry(selector,MinQuery);
+                if (MinQuery.pageName === "app") {
+                    MinQuery.extend(MinQuery.$pageInitObject, pageInheritEventHandlers);
+                    // 启动当前小程序的App初始化函数
+                    App(MinQuery.$pageInitObject);
+                } else {
+                    MinQuery.extend(MinQuery.$pageInitObject, elementEventHandlers, pageInheritEventHandlers);
+                    // 启动当前页面的Page初始化函数，判断模式：恢复模式，则传入copy初始化数据；非恢复模式则传入源数据；
+                    Page(!!recoveryMode ? (MinQuery.extend(true, {}, MinQuery.$pageInitObject)) : MinQuery.$pageInitObject);
+                }
+                // 设置ready标示
+                MinQuery.pageInjected = true;
+                return MinQuery;
             }
-            // 设置ready标示
-            MinQuery.pageInjected = true;
-            return MinQuery;
+            if (selector.name === '$__init__') {
+                setTimeout(() => {
+                    if (!MinQuery.pageInjected) {
+                        _exec_page();
+                    }
+                }, 5);
+            } else {
+                if (!MinQuery.pageInjected) {
+                    return _exec_page();
+                } else {
+                    return null;
+                }
+            }
+
         }
         // 返回数据源的MinQuery封装对象
         return MinQuery.makeArray(selector, this);
@@ -2943,7 +2937,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
         timeOut(call, delay, still) {
             return setTimeout(function () {
                 if (!!this.still || !this.still && MinQuery.isReady) {
-                    MinQuery.isFunction(this.call) && $errorCarry(null,this.call);
+                    MinQuery.isFunction(this.call) && $errorCarry(this.call);
                 }
             }.bind({
                 call: call,
@@ -3137,7 +3131,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                     elem_priv.set(this, "$animation-to-end", jumpToEnd);
                     if (_queFunc instanceof Array) {
                         MinQuery.each(_queFunc, (i, f) => {
-                            MinQuery.isFunction(f) && f();
+                            MinQuery.isFunction(f) && $errorCarry(f);
                         });
                         elem_priv.clear(this, "$animation-to-end")
                     }
@@ -3220,7 +3214,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             }
             this.each(function () {
                 if (MinQuery.isFunction(stylesGetFunc)) {
-                    aniStyles = $errorCarry(null,stylesGetFunc);
+                    aniStyles = $errorCarry(stylesGetFunc);
                 } else {
                     aniStyles = stylesGetFunc;
                 }
@@ -3283,14 +3277,14 @@ const rootMinQuery = function (pageName, recoveryMode) {
             let i = 0, len = this.length, ele;
             for (; i < len;) {
                 ele = this[i++];
-                if (MinQuery.isFunction(className)) className = $errorCarry(ele,className,ele);
+                if (MinQuery.isFunction(className)) className = $errorCarry(className,ele);
                 return MinQuery.hasClass(ele[!hover ? "$class" : "$hoverClass"], className) !== -1;
             }
         },
         // 添加一个不存在的样式
         addClass(className, hover) {
             this.each(function () {
-                if (MinQuery.isFunction(className)) className = $errorCarry(this,className,this);
+                if (MinQuery.isFunction(className)) className = $errorCarry(className,this);
                 if (!MinQuery(this).hasClass(className)) {
                     className = MinQuery.addClass(this.$class, className);
                     setCurrentPageData(`${this.$selectorType}.${this.$selectorName}.${!hover ? "$class" : "$hoverClass"}`, className);
@@ -3301,7 +3295,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
         // 删除一个样式
         removeClass(className, hover) {
             this.each(function () {
-                if (MinQuery.isFunction(className)) className = $errorCarry(this,className,this);
+                if (MinQuery.isFunction(className)) className = $errorCarry(className,this);
                 className = MinQuery.removeClass(this.$class, className);
                 setCurrentPageData(`${this.$selectorType}.${this.$selectorName}.${!hover ? "$class" : "$hoverClass"}`, className);
             });
@@ -3369,8 +3363,8 @@ const rootMinQuery = function (pageName, recoveryMode) {
                     // 当只创建了canvas上下文时，直接返回上下文
                     context = elem_priv.get(ele, "$canvas-context", operationCall);
                     // 如果存在额外的动作操作函数，则执行
-                    if (MinQuery.isFunction(extraMovementCall)) $errorCarry(context,extraMovementCall,context)
-                    if (!!context.canvasId) context.draw();
+                    if (MinQuery.isFunction(extraMovementCall)) $errorCarry(function(){extraMovementCall.call(context, context)});
+                    if (!!context.canvasId) $errorCarry(context.draw);
                     else wx.drawCanvas({
                         canvasId: cid,
                         actions: context.getActions() // 获取绘图动作数组
@@ -3379,8 +3373,8 @@ const rootMinQuery = function (pageName, recoveryMode) {
                     // 当通过原型方法创建时，则开始绘制
                     context = !!context ? context : elem_priv.get(ele, "$canvas-context", wx.createCanvasContext(cid));
                     if (callIsFunction) {
-                        $errorCarry(context,operationCall,context)
-                        context.draw()
+                        $errorCarry(function(){operationCall.call(context, context)});
+                        $errorCarry(context.draw);
                     }
                 }
                 // 每次均返回context上下文，便于自定义使用外部方法进行画布的编辑工作
@@ -3445,7 +3439,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             let priv_context_path = `$canvas-context-${!!canvasId ? canvasId : MinQuery.now()}`;
             let current_context = elem_priv.get(this, priv_context_path, !!canvasId ? wx.createCanvasContext(canvasId) : wx.createContext());
             if (MinQuery.isFunction(contextMovementCall)) {
-                $errorCarry(current_context,contextMovementCall,current_context)
+                $errorCarry(function(){contextMovementCall.call(current_context, current_context)});
             }
             return current_context;
         },
@@ -3514,13 +3508,6 @@ const rootMinQuery = function (pageName, recoveryMode) {
         // 修改当前对象中对应的键值
         set(key, value) {
             if (!value) { value = key; key = null }
-            /** 
-             * Key的设置存在漏洞，未进行标准化处理！！！
-             * 
-             * 待修复：
-             * 拼接的key在数组的时候，被拼接成了dot键
-             * 
-             * */
             var _key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
             // 多字段设置
             if (MinQuery.isArray(this.__path__) && !!key) {
@@ -3530,6 +3517,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                     return setCurrentPageData(key, value);
                 } else {
                     MinQuery.each(this.__hooks__, function (i, hn) {
+                        console.log(hn[i], _kp[i], key);
                         if (hn == key) {
                             setCurrentPageData(_kp[i], value);
                         }
@@ -3664,6 +3652,9 @@ const rootMinQuery = function (pageName, recoveryMode) {
             return;
         // 限制开发者直接修改框架固有管理对象属性，导致管理出现混乱
         for (k in keyString) {
+            // 执行$watch
+            detecteWatchTarget(k, keyString[k]);
+
             if (MinQuery.trim(k) == "")
                 return;
             ka = k.split(".");
@@ -3678,10 +3669,6 @@ const rootMinQuery = function (pageName, recoveryMode) {
             }
             // 验证设置的值是否与Page实例对象上的值相同，避免框架数据篡改带来的影响
             oldValue = !!MinQuery.pageInstance ? MinQuery.getData(MinQuery.pageInstance.data, k) : MinQuery.getData(k);
-
-            // 执行$watch
-            detecteWatchTarget(k, keyString[k],oldValue);
-
             if (oldValue === keyString[k]) delete keyString[k];
 
             // 获取操作key的最后一位，作为当前返回操作的标识
@@ -3771,14 +3758,14 @@ const rootMinQuery = function (pageName, recoveryMode) {
         __data_watchs: {}
     })
     // 数据监视检索方法
-    let detecteWatchTarget = function (_path, _newValue, _oldValue) {
+    let detecteWatchTarget = function (_path, _newValue) {
         if (!_path) return;
         for (let w in MinQuery.__data_watchs) {
             let _w = MinQuery.__data_watchs[w];
             if (_w.isFuzzy === true) {
-                _path.indexOf(_w.path) !== -1 && $errorCarry(null,_w.call,_newValue, _oldValue, _path);
+                _path.indexOf(_w.path) !== -1 && _w.call(_newValue, MinQuery.getData(_path), _path);
             } else {
-                _path === _w.path && $errorCarry(null,_w.call,_newValue, _oldValue, _path);
+                _path === _w.path && _w.call(_newValue, MinQuery.getData(_path), _path);
             }
         }
     }
@@ -3802,22 +3789,15 @@ wx.MinQuery = function (pageName, recoveryMode) {
     };
 
     const _MQ = rootMinQuery(pageName, recoveryMode);
-    // 若未手动自行主函数，则自动执行一次
-    setTimeout(()=>{
-        if (!_MQ.pageInjected) {
-            _MQ(()=>{console.info('自动执行App()或Page()方法进行页面初始化！！注意：请在复杂页面逻辑的情况下调用$(()=>{})方法来执行数据和事件的绑定操作，确保事件和数据的有效注入。否则可能会因为的异步执行时差导致效应报错，或数据和事件无法正确的被注入到App()或Page()实例当中！')})
-        }
-    },5)
+    _MQ(function $__init__() { console.info('自动执行Page()方法进行页面初始化！！注意：请在复杂页面逻辑的情况下调用$(()=>{})主执行方法来执行数据和事件的绑定操作，确保事件和数据的有效注入。不然可能会因为异步逻辑执行时差不一而导致报错，或数据和事件无法正确的被注入到Page()实例当中！') });
     return _MQ;
 };
 
 // 开启debug模式，开发阶段建议开启此模式，方便调试应用，并且防止异常报错导致的内存溢出和IDE崩溃现象。
-wx.MinQuery.debug = function(on,errorCarry){
+wx.MinQuery.debug = function(on){
     if(on){
         debugMode = true;
     }
-    // 自定义错误处理函数
-    _$.isFunction(errorCarry) && (errorHandler = errorCarry);
 }
 
 module.exports = wx.MinQuery;

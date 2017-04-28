@@ -1,13 +1,15 @@
 {
   "pages":[
+    "pages/components/components",
     "pages/index/index",
     "pages/dataset/dataset",
+    "pages/elements/elements",
     "pages/pageevent/pageevent",
     "pages/request/request",
     "pages/form/form",
-    "pages/components/components",
-    "pages/simple_app/simple_app",
-    "pages/elements/elements"
+    
+    "pages/simple_app/simple_app"
+    
     
     
     
@@ -18,5 +20,14 @@
     "navigationBarBackgroundColor": "#fff",
     "navigationBarTitleText": "WeChat",
     "navigationBarTextStyle":"black"
+  },
+  "tabBar": {
+    "list": [{
+      "pagePath": "pages/index/index",
+      "text": "课程"
+    }, {
+      "pagePath": "pages/components/components",
+      "text": "Now"
+    }]
   }
 }

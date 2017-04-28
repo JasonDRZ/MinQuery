@@ -1,5 +1,15 @@
 # 小程序MinQuery框架开发接口文档
-MinQuery是一款针对WeChat-Min-App的一套轻量级代码工具库。旨在简化小程序开发管理流程，降低开发门槛，提高开发效率。
+
+谁说小程序就不能支持使用jQuery的方法了呢？
+
+MinQuery则由此而生，它是一款针对WeChat-Min-App的类jQuery开发管理库，它允许开发者使用类似jQuery的代码书写方式和数据管理模式进行代码逻辑的书写，并且有序、高校的管理你的小程序数据结构。让你在项目开发中能够更加轻松的进行页面数据的操作，元素事件的监听绑，元素样式、动画等属性等等操作。
+
+> 先睹为快
+
+
+
+
+**MinQuery —— 旨在简化小程序开发管理流程，降低开发门槛，提高开发效率。**
 
 [github地址](https://github.com/JasonDRZ/MinQuery/)
 
@@ -65,7 +75,7 @@ MinQuery.debug(activeDebugMode, [errorHandler])方法接收两个参数
 `activeDebugMode[Boolean]` | `false` | 是否开启debug模式
 `errorHandler[Function]` | `console.error(e)` | 处理开发过程中的错误呈现
 
-
+**开发完成后请关掉debug模式，以免降低程序的运行效率。**
 
 ## MinQuery页面注册
 
@@ -530,7 +540,11 @@ $(()=>{
 });
 ```
 
-> 请注意：框架自动调用`$(function(){})`可能会在复杂处理逻辑时造成丢失数据，为保证数据的正确注入，推荐在所有页面处理逻辑中手动运行`$(function(){})`方法来完成Page事件和数据的绑定注入。
+> 请注意，有两种情况下不能让框架进行自动调用`$(function(){})`：
+1. 页面JS文件存在复杂处理逻辑时，需手动调用`$(function(){})`方法。否则将造成数据丢失或事件方法注入失败等问题。
+2. 在`app.json`中的 `tabBar-list` 下配置的页面需进行手动执行，否则小程序会报运行时错误。
+
+>为保证数据的正确注入，推荐在所有页面处理逻辑中手动运行`$(function(){})`方法来完成Page事件和数据的绑定注入。
 
 
 
