@@ -2483,7 +2483,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             // 优先在事件管理器上查询并执行对应去掉on的自定义事件
             let ret = eventHooks.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, _rewrite_event);
             // 未查询到自定义事件是执行查询原始事件名称事件
-            if (ret === '[No Handler]') {
+            if (ret === '[No-Event-Handler]') {
                 // 查询执行元素原生事件
                 return eventHooks.get(`${MinQuery.selectorsBank.app[0]}.app`, `bind.${ename}`, _rewrite_event);
             } else {
@@ -2527,7 +2527,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
             // 优先在事件管理器上查询并执行对应去掉on的自定义事件
             let ret = eventHooks.get(`${MinQuery.selectorsBank.page[0]}.page`, `bind.${MinQuery.pageInheritEventKVPair[ename]}`, e);
             // 未查询到自定义事件是执行查询原始事件名称事件
-            if (ret === '[No Handler]') {
+            if (ret === '[No-Event-Handler]') {
                 // 查询执行元素原生事件
                 return eventHooks.get(`${MinQuery.selectorsBank.page[0]}.page`, `bind.${ename}`, e);
             } else {
@@ -2592,7 +2592,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 eventkeys = elekeys[1];
                 elekeys = elekeys[0];
             };
-            let noFunc = "[No Handler]";
+            let noFunc = "[No-Event-Handler]";
             if (!elekeys) {
                 return noFunc;
             }
@@ -2675,18 +2675,17 @@ const rootMinQuery = function (pageName, recoveryMode) {
         // id获取来源是否是
         // 解决小程序catch与bind时出现的事件错误
         let cur_id = MinQuery.getData(e, 'currentTarget.id'),
-            tar_id = MinQuery.getData(e, 'target.id'),
             cur_class = MinQuery.getData(e, 'currentTarget.dataset.mClass'),
-            tar_class = MinQuery.getData(e, 'target.dataset.mClass'),
             // 用于canvas画布的id选中
-            tar_tar = MinQuery.getData(e, 'target.target');
-        let tid = cur_id
-            ? cur_id
-            : tar_id,
-            tcs = cur_class
-                ? cur_class
-                : tar_class;
-        tid = tid ? tid : tar_tar;
+            tar_tar = MinQuery.getData(e, 'target.target'),
+            tar_id = MinQuery.getData(e, 'target.id');
+        // 不管是是什么类型的事件，均通过currentTarget是进行事件触发标示，避免target事件触发导致无对应处理方法时，出现调用currentTarget事件方法
+        let tid = cur_id,
+            tcs = cur_class;
+        //用于解决Canvas画布的id选择
+        if (!("currentTarget" in e)){
+	        tid = !!tid ? tid : tar_id ? tar_id : tar_tar;
+        }
         // event对象扩展
         if (e.type === "submit") MinQuery.extend(e, {
             // 设置访问formData快捷接口
@@ -2711,10 +2710,13 @@ const rootMinQuery = function (pageName, recoveryMode) {
                 else return dataset;
             }
         })
-        // 优先查询ID绑定池并执行;渲染层事件触发不存在返回数据
-        let ret = tid ? eventHooks.get(`${MinQuery.selectorsBank["#"][0]}.${tid}`, `${_type}.${e.type}`, e) : "[No Handler]";
+        // 优先查询ID事件池并执行;渲染层事件触发不存在返回数据，但如果未找到对应事件处理器，则会返回[No-Event-Handler]字符串；
+        let ret = tid ? eventHooks.get(`${MinQuery.selectorsBank["#"][0]}.${tid}`, `${_type}.${e.type}`, e) : "[No-Event-Handler]";
         // 如果不存在ID事件绑定则查询data-min-class绑定版
-        (ret === "[No Handler]") && tcs && eventHooks.get(`${MinQuery.selectorsBank["."][0]}.${tcs}`, `${_type}.${e.type}`, e);
+        (ret === "[No-Event-Handler]") && tcs && eventHooks.get(`${MinQuery.selectorsBank["."][0]}.${tcs}`, `${_type}.${e.type}`, e);
+	    //尝试去执行一个$all事件，无论元素上触发什么样的事件都会按类型进行触发
+	    tid && eventHooks.get(`${MinQuery.selectorsBank["#"][0]}.${tid}`, `${_type}.$all`, e);
+	    tcs && eventHooks.get(`${MinQuery.selectorsBank["."][0]}.${tcs}`, `${_type}.$all`, e);
     }
 
     // 存储已注册元素路径
