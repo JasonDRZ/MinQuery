@@ -444,7 +444,7 @@ const wxMethodsParamsConfig = [{
 	param_nor: [['showCancel', 'boolean'], ['cancelText'], ['cancelColor'], ['confirmText'], ['confirmColor']]
 }, {
 	name: 'showActionSheet',
-	param_def: [['itemList']],
+	param_def: [['itemList','array']],
 	param_nor: [['itemColor']]
 }, {
 	// 设置导航条
@@ -1068,8 +1068,8 @@ const wxMethodsCallbackGenerate = function (methodName, _options, wrapperCall, c
 	if (typeof methodName == 'string' && methodName in context) {
 		let _backup = {}, k, f;
 		// 剥离参数中的类型回调函数
-		for (k in wxCalls) {
-			f = options[k];
+		_$.each(wxCalls,function (i,cn) {
+			f = options[cn];
 			if (_$.isFunction(f)) {
 				// 仅存储预设回调名称中的回调函数
 				_backup[k] = f;
@@ -1078,7 +1078,7 @@ const wxMethodsCallbackGenerate = function (methodName, _options, wrapperCall, c
 			} else {
 				_backup[k] = _$.noop;
 			}
-		}
+		});
 		let _continue_func;
 		// 仅在参数集为Object的情况下进行回调封装继承
 		_$.isPlainObject(options) && $extend(options, {
@@ -1128,13 +1128,13 @@ const wxMethodsCallbackGenerate = function (methodName, _options, wrapperCall, c
 }
 let _wxMethodsPackages = {};
 _$.each(wxMethodsParamsConfig, function (i, _oj) {
-	if (_oj.name) {
+	if (_oj.name && _oj.name in wx) {
 		_wxMethodsPackages[_oj.name] = (function (_inob) {
 			let _param_def = _inob['param_def'], _param_nor = _inob['param_nor'], _param_all;
 			if (_$.isArray(_param_def)) {
 				_param_all = _$.isArray(_param_nor) ? _param_def.concat(_param_nor) : _param_def;
 			} else _param_all = null;
-			return function () {
+			return function (a) {
 				// 返回的封装函数
 				let args = slice.call(arguments), _has_config = _$.isArray(_param_all), _type = 'string', _type_match = false, _preset = '', _cur_param, _first = args[0], options = {};
 				// 如果存在配置，则表明此项一定是异步回调形式，则进行预设参数进行继承
@@ -1917,19 +1917,38 @@ const autoMendServer = function (url, serverType) {
 	return url;
 }
 // 允许可发直接数据页面的名称即可访问页面，而非输入全路径。
+/**
+ * 允许你传入这样的页面路径：pageName, /pageName，./pagePath/to/pageName?q=1
+ * 全路径不被处理：../pageName, ../path/pageName,../../path/pageName
+ * @param url
+ * @return {*}
+ */
 const smartToCompleteLocalPath = function (url) {
 	if (_$.isString(url)) {
 		let _isFullPath = /^..\//.test(url), _needToFix = url[0] !== '!';
+		//只对非全路径和需要进行补全的路径进行处理
 		if (!_isFullPath && _needToFix) {
-			let _hasSlash = url.indexOf('/') !== -1, _splitPath = url.split('/');
-			if (_hasSlash) {
-				let _pname = _splitPath[_splitPath.length - 1];
-				url = '../' + _pname + '/' + _pname;
-			} else url = '../' + url + '/' + url;
+			let _hasSlash = url.indexOf('/') !== -1,
+				_splitPath = url.split('/'),
+				_pathLastSplit = _splitPath.pop().split('?'),
+				_query = _pathLastSplit[1];
+			//将最后一位的query字段进行抽离
+			_splitPath.push(_pathLastSplit[0]);
+			//去掉空路径和单点路径
+			_splitPath.filter(function (pa,i) {
+				return _$.trim(pa) !== '' || _$.trim(pa) !== '.';
+			});
+			//定位到同一主目录的页面
+			if (_splitPath.length == 1) {
+				url = '../' + _splitPath[0] + '/' + _splitPath[0] + (!!_query ? ('?' + _query) : '');
+			} else {
+				url = '../' + _splitPath.join('/') + (!!_query ? ('?' + _query) : '')
+			};
 		}
 		// 如果不需要补全则删掉第一位的感叹号
 		!_needToFix && (url = url.substr(1));
 	}
+	console.log(url)
 	return url;
 }
 
@@ -2105,11 +2124,9 @@ const rootMinQuery = function (pageName, recoveryMode) {
 	/** 此接口用于访问未支持的wx接口，提供二次封装，并支持链式调用方式。
 	 * 调用方法-分类回调形式：
 	 *      常规链式方法 MinQuery.wxMethod(wxMethodName,{config: value,success(re){}}).fail(err=>{});
-	 *      Thenjs方法 Thenjs(MinQuery.wxMethod(wxMethodName,{config: value})).then((cont,res)=>{cont()}).fin((cont,err,res)=>{cont(err)});
-	 * 单回调形式
-	 *      MinQuery.wxMethod(wxMethodName,function(re){});
-	 * 单一参数型
-	 *      MinQuery.wxMethod(wxMethodName,paramValue);
+	 *      Thenjs方法 Thenjs(MinQuery.wxMethod(wxMethodName,{config:
+     * value})).then((cont,res)=>{cont()}).fin((cont,err,res)=>{cont(err)}); 单回调形式
+	 * MinQuery.wxMethod(wxMethodName,function(re){}); 单一参数型 MinQuery.wxMethod(wxMethodName,paramValue);
 	 */
 	MinQuery.wxMethod = wxMethodsCallbackGenerate;
 	
@@ -2507,6 +2524,12 @@ const rootMinQuery = function (pageName, recoveryMode) {
 				}
 				// 将load事件中打来的路径参数绑定到框架上
 				MinQuery.querys = e;
+				//将wx创建的pageInstance镜像处理
+				MinQuery.each(this,function (k,v) {
+					if(!(k in MinQuery.$pageInitObject)){
+						MinQuery.$pageInitObject[k] = v;
+					}
+				});
 				// 设置已加载的页面的MQ实例
 				$pageLoadedInstances.set(MinQuery.pageName, MinQuery);
 			}
@@ -2855,22 +2878,6 @@ const rootMinQuery = function (pageName, recoveryMode) {
 		} else if (MinQuery.isFunction(selector)) {
 			// 执行加载函数
 			// 首先运行主体注册函数
-			// let _exec_page = function () {
-			
-			// }
-			// if (selector.name === '$__init__') {
-			//     setTimeout(() => {
-			//         if (!MinQuery.pageInjected) {
-			//             _exec_page();
-			//         }
-			//     }, 5);
-			// } else {
-			//     if (!MinQuery.pageInjected) {
-			//         return _exec_page();
-			//     } else {
-			//         return null;
-			//     }
-			// }
 			$errorCarry(MinQuery,selector,MinQuery);
 			// selector(MinQuery);
 			if (MinQuery.pageName === "app") {
@@ -2903,6 +2910,10 @@ const rootMinQuery = function (pageName, recoveryMode) {
 		// 获取时，允许传入一个预设值，当获取的数据不存在的时候进行预设。
 		get(ele, _type, value, arrPush) {
 			let cur_priv = MinQuery.getData(ele, `${this.priv_keys}.${_type}`);
+			//将文设置webviewId的context对象设置当前的webviewid
+			if (_$.type(cur_priv) == 'object' && cur_priv.hasOwnProperty('webviewId')&&_$.isUndefined(cur_priv.webviewId)) {
+				cur_priv.webviewId = MinQuery.pageInstance.__wxWebviewId__;
+			}
 			return !!cur_priv ? cur_priv : !!value ? this.set(ele, _type, value, arrPush) : undefined;
 		},
 		// 设置数据并返回设置的数据
@@ -2958,11 +2969,10 @@ const rootMinQuery = function (pageName, recoveryMode) {
 	MinQuery.fn.extend({
 		/**
 		 * _type String 【必填】 属性名称
-		 * handler Function 【可选】自定义操作方法，接收四个参数：ele_data_path[元素数据全路径]、ele_data[元素数据]、key[设置的数据键]、value[设置的数据键值];此方法会进行循环调用，this对象指向当前处理的元素数据。
-		 * handler函数处理后的返回值可带两个指令性标示，分别是：
-		 *      handler().$__returns__ //需要返回的内容
-		 *      handler().$__force_return__  //强制返回$__returns__中的内容
-		 *      handler().$__force_continue__  //强制忽略后续执行，并进入下一个循环
+		 * handler Function
+		 * 【可选】自定义操作方法，接收四个参数：ele_data_path[元素数据全路径]、ele_data[元素数据]、key[设置的数据键]、value[设置的数据键值];此方法会进行循环调用，this对象指向当前处理的元素数据。
+		 * handler函数处理后的返回值可带两个指令性标示，分别是： handler().$__returns__ //需要返回的内容 handler().$__force_return__
+		 * //强制返回$__returns__中的内容 handler().$__force_continue__  //强制忽略后续执行，并进入下一个循环
 		 *
 		 * key String 【必填】键名称
 		 * value Anytype 【必填】 键值数据
@@ -3334,7 +3344,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
 					if (MinQuery(this).hasClass(classOne, hover)) {
 						MinQuery(this).removeClass(classOne, hover);
 					} else {
-						MinQuery(this).hasClass(classOne, hover);
+						MinQuery(this).addClass(classOne, hover);
 					}
 				}
 			})
@@ -3354,24 +3364,40 @@ const rootMinQuery = function (pageName, recoveryMode) {
 			return MinQuery(this).toggleClass(classOne, classTwo, true);
 		}
 	});
-	// 组件操作
+	// 组件操作，组件方法几乎不能进行链式调用。
 	MinQuery.fn.extend({
-		canvas(operationCall, extraMovementCall) {
+		/**
+		 * 元素Canvas接口
+		 * @param [prevContext] PlainObject 预先创建的Canvas context对象
+		 * @param [extraMovementCalls] Functions 不限数量的动作处理方法
+		 * @return {*}
+		 */
+		canvas(prevContext, extraMovementCalls) {
 			let i = 0, len = this.length, ele, cobj = {};
+			let args = slice.call(arguments);
+			if (_$.isPlainObject(args[0])){
+				args = args.slice(1);
+				if (!(prevContext.hasOwnProperty('canvasId') && prevContext.hasOwnProperty("actions") && prevContext.hasOwnProperty("path"))){
+					prevContext = null;
+				}
+			} else {
+				prevContext = null;
+			}
 			for (; i < len;) {
 				ele = this[i++];
 				let cid = ele.$selectorName,
-					callIsFunction = MinQuery.isFunction(operationCall),
 					// 预先获取一下当前元素的canvas对象
-					context = elem_priv.get(ele, "$canvas-context"),
-					// 验证是否为canvas对象
-					isPrevContext = !!operationCall && !callIsFunction && operationCall.hasOwnProperty('canvasId') && operationCall.hasOwnProperty("actions") && operationCall.hasOwnProperty("path");
+					context = elem_priv.get(ele, "$canvas-context") ;
 				// 当创建了canvas动作时
-				if (isPrevContext) {
+				if (prevContext) {
 					// 当只创建了canvas上下文时，直接返回上下文
-					context = elem_priv.get(ele, "$canvas-context", operationCall);
+					context = elem_priv.get(ele, "$canvas-context", prevContext);
 					// 如果存在额外的动作操作函数，则执行
-					if (MinQuery.isFunction(extraMovementCall)) $errorCarry(context,extraMovementCall,context)
+					_$.each(args,function (i,fn) {
+						if (_$.isFunction(fn)) {
+							$errorCarry(context,fn,context)
+						}
+					});
 					if (!!context.canvasId) context.draw();
 					else wx.drawCanvas({
 						canvasId: cid,
@@ -3380,10 +3406,12 @@ const rootMinQuery = function (pageName, recoveryMode) {
 				} else {
 					// 当通过原型方法创建时，则开始绘制
 					context = !!context ? context : elem_priv.get(ele, "$canvas-context", wx.createCanvasContext(cid));
-					if (callIsFunction) {
-						$errorCarry(context,operationCall,context)
-						context.draw()
-					}
+					_$.each(args,function (i,fn) {
+						if (_$.isFunction(fn)) {
+							$errorCarry(context,fn,context)
+						}
+					});
+					context.draw();
 				}
 				// 每次均返回context上下文，便于自定义使用外部方法进行画布的编辑工作
 				if (len > 1) cobj[ele.$selectorName] = context;
@@ -3412,8 +3440,12 @@ const rootMinQuery = function (pageName, recoveryMode) {
 			for (; i < len;) {
 				ele = this[i++];
 				let vid = ele.$selectorName,
-					context = MinQuery.audio.call(ele, vid);
-				if (MinQuery.isString(src)) { autoMendServer(src, 'audioServer'); context.setSrc(src); }
+					context = elem_priv.get(ele, "$audio-context", wx.createAudioContext(vid));
+				context.__proto__.start = function (tick) {
+					this.seek(_$.isNumeric(tick)?tick:0);
+					this.play();
+				}
+				if (MinQuery.isString(src)) { src = autoMendServer(src, 'audioServer'); context.setSrc(src); }
 				// 每次均返回context上下文，便于自定义使用外部方法进行画布的编辑工作
 				if (len > 1) cobj[ele.$selectorName] = context;
 				else return context;
@@ -3439,16 +3471,24 @@ const rootMinQuery = function (pageName, recoveryMode) {
 	});
 	// 创建独立canvas画布对象
 	MinQuery.extend({
-		canvas(canvasId, contextMovementCall) {
-			// 支持无id创建canvas上下文
-			if (MinQuery.isFunction(canvasId)) {
-				contextMovementCall = canvasId; canvasId = null;
-			}
+		/**
+		 * canvas 作用域创建方法
+		 * @param [canvasId] String 已有的canvas-id
+		 * @param [contextMovementCalls] Function 一些动作方法
+		 * @return {*}
+		 */
+		canvas(canvasId, contextMovementCalls) {
+			var args = slice.call(arguments);
+			if (_$.isString(args[0])) {args = args.slice(1);} else canvasId = null;
+			//暂存canvas上下文
 			let priv_context_path = `$canvas-context-${!!canvasId ? canvasId : MinQuery.now()}`;
 			let current_context = elem_priv.get(this, priv_context_path, !!canvasId ? wx.createCanvasContext(canvasId) : wx.createContext());
-			if (MinQuery.isFunction(contextMovementCall)) {
-				$errorCarry(current_context,contextMovementCall,current_context)
-			}
+			//支持多个动作函数
+			_$.each(args,function (i,fn) {
+				if (_$.isFunction(fn)) {
+					$errorCarry(current_context,fn,current_context)
+				}
+			});
 			return current_context;
 		},
 		video(videoId) {
