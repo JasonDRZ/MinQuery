@@ -848,13 +848,19 @@ let _$ = {
 	humpToAny: function (str, symbal) {
 		return str.replace(/([A-Z])/g, (symbal ? symbal : "-") + "$1").toLowerCase();
 	},
-	// 格式化日期，支持时间戳和Date实例
+	/**
+	 * 格式化日期，支持时间戳和Date实例
+	 * @param date 要格式话的日期
+	 * @param fmt String 日期格式模板：{y:'年',m:'月',d:'日',h:'时',i:'分',s:'秒',q:'季度',S:'毫秒'}
+	 * @template ('2017.11.12','yyyy年mm月dd日') =>2017年11月12日
+	 * @return {*}
+	 */
 	formatDate: function (date, fmt) {
 		//author: meizz,jason
-		if (date instanceof Date || typeof date === 'number') {
-			typeof date === 'number' && (date = new Date(date));
+		if (date instanceof Date || _$.isNumeric(date) || _$.isString(date)) {
+			date = new Date(date);
 		} else {
-			console.error("The formatDate first param must be an Date() instance or timestamp!");
+			console.error("The formatDate first param must be an Date() instance or timestamp or date format string!");
 			return date;
 		}
 		let o = {
@@ -1151,7 +1157,7 @@ _$.each(wxMethodsParamsConfig, function (i, _oj) {
 			return function (a) {
 				// 返回的封装函数
 				let args = slice.call(arguments), _has_config = _$.isArray(_param_all), _type = 'string',
-					_type_match = false, _preset = '', _cur_param, _first = args[0], options = {};
+					_type_matches = [], _preset = '', _cur_param, _first = args[0], options = {};
 				// 如果存在配置，则表明此项一定是异步回调形式，则进行预设参数进行继承
 				if (_has_config) {
 					// 优先进行配置项预设
@@ -1163,24 +1169,26 @@ _$.each(wxMethodsParamsConfig, function (i, _oj) {
 					if (_$.isPlainObject(_first)) {
 						$extend(options, _first);
 					} else _$.each(args, function (_i, ar) {
-						_type_match = false;
+						_type_matches = [];
 						_cur_param = _param_all[_i];
 						// 存在配置预设项则进行验证，不存在，则忽略此字段
-						if (!!_cur_param) {
+						if (!!_cur_param && !_$.isUndefined(ar)) {
 							_type = !!_cur_param[1] ? _cur_param[1] : 'string';
 							_type = _type.split("|");
 							// 判断是否符合多个类型中的某一个类型
 							_$.each(_type, function (_, t) {
 								if (_$.type(ar) === t) {
-									_type_match = true;
-									return false
+									//匹配到一个则中断
+									_type_matches = [];
+									return false;
+								} else {
+									_type_matches.push(t);
 								}
-								;
 							})
-							if (_type_match) {
+							if (_type_matches.length == 0) {
 								options[_cur_param[0]] = ar;
 							} else {
-								console.error(`${_inob.name} method's param ${_cur_param[0]}`)
+								console.error(`${_inob.name} method's param ${_cur_param[0]} should be ${_type_matches.join(' or ')}!`)
 							}
 						} else return false;
 					});
@@ -1823,7 +1831,7 @@ const $globalEvents = {
 					this.__events__[pname][ename] = method;
 				} else {
 					// 禁止在同一页面多次注册同一全局事件
-					console.error("Can not regiser a global event name in the same page again!");
+					console.error(`Can not regiser a global event name in the same page again!PageName:[${pname}];EventName:[${ename}]`);
 				}
 			}
 		}
@@ -1883,7 +1891,7 @@ let globalConfiguration = {
 // 设置imageServer图片服务器地址
 // 设置audioServer音频服务器地址
 // 设置videoServer视频服务器地址
-const _serverTypes = 'ajaxServer,socketServer,uploadServer,downloadServer,imageServer,audioServer,videoServer'.split(',');
+const _serverTypes = 'ajaxServer,socketServer,uploadServer,downloadServer,imageServer,imageLocal,audioServer,videoServer'.split(',');
 _$.each(_serverTypes, function (i, k) {
 	globalConfiguration.set(k, '');
 });
@@ -2151,6 +2159,9 @@ const rootMinQuery = function (pageName, recoveryMode) {
 	};
 	// 集成extend module
 	MinQuery.extend = MinQuery.fn.extend = $extend;
+	
+	//捕获错误
+	MinQuery.$catch = $errorCarry;
 	
 	// 继承common methods
 	MinQuery.extend(MinQuery, {
@@ -3027,6 +3038,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
 			//将文设置webviewId的context对象设置当前的webviewid
 			if (_$.type(cur_priv) == 'object' && cur_priv.hasOwnProperty('webviewId') && _$.isUndefined(cur_priv.webviewId)) {
 				cur_priv.webviewId = MinQuery.pageInstance.__wxWebviewId__;
+				console.info(cur_priv.webviewId);
 			}
 			return !!cur_priv ? cur_priv : !!value ? this.set(ele, _type, value, arrPush) : undefined;
 		},
@@ -3142,7 +3154,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
 	})
 	// Elements Attributes Operation Methods
 	MinQuery.fn.extend({
-		// 设置当前元素data值
+		// 设置当前元素data值,并返回操作hook，类似setData方法
 		data(key, value) {
 			let i = 0, len = this.length, ele;
 			for (; i < len;) {
@@ -3161,14 +3173,18 @@ const rootMinQuery = function (pageName, recoveryMode) {
 					}
 					// 如果key是字符串
 					// 存在对应数据，则设置数据，返回操作hooks
-					if (value) return setCurrentPageData(_path + `.${key}`, value);
+					if (!MinQuery.isUndefined(value)) return setCurrentPageData(_path + `.${key}`, value);
 					else {
 						// 不存在则获取对应数据
 						return _eledt ? MinQuery.getData(_eledt, key) : undefined;
 					}
-				} else if (!!key) {
+				} else if (MinQuery.isPlainObject(key)) {
+					MinQuery.each(key,function (k,v) {
+						key[_path + "." + k] = v;
+						delete key[k];
+					})
 					// 直接设置非String数据
-					return setCurrentPageData(_path, key);
+					return setCurrentPageData(key);
 				} else {
 					// 如果key和value均不存在，则返回$data数据
 					return _eledt;
@@ -3673,22 +3689,22 @@ const rootMinQuery = function (pageName, recoveryMode) {
 		 */
 		get(key) {
 			var _key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
-			// 多键设置
+			// 多键获取
 			if (MinQuery.isArray(this.__path__)) {
 				var _gt, _kn = this.__hooks__;
 				// 如果是多键形式，则直接进行根域查询
-				if (key.indexOf('.') != -1) {
+				if (_key.indexOf('.') != -1) {
 					return MinQuery.getData(key);
 				} else {
 					MinQuery.each(this.__path__, function (i, pt) {
-						if (_kn[i] == key) {
+						if (_kn[i] == _key) {
 							_gt = MinQuery.getData(pt);
 						}
 					});
 					return _gt;
 				}
 			} else {
-				// 单键设置
+				// 单键获取
 				return MinQuery.getData(this.__path__ + _key);
 			}
 		},
@@ -3708,14 +3724,14 @@ const rootMinQuery = function (pageName, recoveryMode) {
 			 * */
 			var _key = MinQuery.type(key) == 'string' || MinQuery.type(key) == 'number' ? `.${key}` : '';
 			// 多字段设置
-			if (MinQuery.isArray(this.__path__) && !!key) {
+			if (MinQuery.isArray(this.__path__) && !!_key) {
 				var _kp = this.__path__;
 				// 如果是多键形式，则直接进行根域数据设置
-				if (key.indexOf('.') != -1) {
-					return setCurrentPageData(key, value);
+				if (_key.indexOf('.') != -1) {
+					return setCurrentPageData(_key, value);
 				} else {
 					MinQuery.each(this.__hooks__, function (i, hn) {
-						if (hn == key) {
+						if (hn == _key) {
 							setCurrentPageData(_kp[i], value);
 						}
 					});
@@ -3872,7 +3888,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
 			oldValue = !!MinQuery.pageInstance ? MinQuery.getData(MinQuery.pageInstance.data, k) : MinQuery.getData(k);
 			
 			// 执行$watch
-			detecteWatchTarget(k, keyString[k], oldValue);
+			detectWatchTarget(k, keyString[k], oldValue);
 			
 			if (oldValue === keyString[k]) delete keyString[k];
 			
@@ -3908,7 +3924,7 @@ const rootMinQuery = function (pageName, recoveryMode) {
 			// 同步更新框架上的数据
 			MinQuery.dataProcessor(MinQuery.$pageInitObject.data, keyString);
 		}
-		// 如果
+		// 如果保持对象输出，则保持
 		if (stayFormat !== true && returns.__length__ === 1) {
 			returns = returns[returns.__hooks__[0]]
 		} else {
@@ -3918,11 +3934,17 @@ const rootMinQuery = function (pageName, recoveryMode) {
 		// 返回一个后期操作hook，
 		return returns;
 	}
+	let __data_watches = {};
 	// 数据操作方法主体
 	MinQuery.extend({
 		// 加载数据解析引擎
 		dataProcessor: $analysisDataEngine,
-		// 获取数据接口
+		/**
+		 * 获取当前页面数据或指定数据
+		 * @param queryObj 可选 指定数据源
+		 * @param keys String 获取的键
+		 * @return {*} 返回对应数据
+		 */
 		getData(queryObj, keys) {
 			if (typeof queryObj === "string") {
 				keys = queryObj;
@@ -3932,8 +3954,14 @@ const rootMinQuery = function (pageName, recoveryMode) {
 			let res = MinQuery.dataProcessor(queryObj, keys);
 			return res;
 		},
-		// 设置键值数据，保证Page数据与框架数据的同步性
-		// 此接口主要供给插件访问接口
+		/**
+		 * 设置键值数据，保证Page数据与框架数据的同步性    此接口主要供给插件访问接口
+		 * @param keyString String | Object 键
+		 * @param keyValue AnyType 值
+		 * @param stayFormat Boolean
+		 * @param forceAccess Boolean
+		 * @return {*} OperationHooks
+		 */
 		setData(keyString, keyValue, stayFormat, forceAccess) {
 			if (MinQuery.isString(keyString) && MinQuery.isUndefined(keyValue)) {
 				// setData Hook 访问器，可在访问的同时设置一次当前数据Hook的值
@@ -3954,20 +3982,25 @@ const rootMinQuery = function (pageName, recoveryMode) {
 			if (MinQuery.isPlainObject(watchDataKey) && watchDataKey.__path__) {
 				watchDataKey = watchDataKey.__path__;
 			}
-			
-			this.__data_watchs[watchDataKey] = {
+			//暂存监视器
+			__data_watches[watchDataKey] = {
 				path: watchDataKey,
 				call: watchCall,
 				isFuzzy: fuzzy
 			}
 		},
-		__data_watchs: {}
+		
 	})
-	// 数据监视检索方法
-	let detecteWatchTarget = function (_path, _newValue, _oldValue) {
+	/**
+	 * 数据监视检索方法
+	 * @param _path String 数据设置路径
+	 * @param _newValue
+	 * @param _oldValue
+	 */
+	let detectWatchTarget = function (_path, _newValue, _oldValue) {
 		if (!_path) return;
-		for (let w in MinQuery.__data_watchs) {
-			let _w = MinQuery.__data_watchs[w];
+		for (let w in __data_watches) {
+			let _w = __data_watches[w];
 			if (_w.isFuzzy === true) {
 				_path.indexOf(_w.path) !== -1 && $errorCarry(null, _w.call, _newValue, _oldValue, _path);
 			} else {
@@ -3977,7 +4010,12 @@ const rootMinQuery = function (pageName, recoveryMode) {
 	}
 	return MinQuery;
 }
-// 抛出接口
+/**
+ * 根方法
+ * @param pageName String 注册页面名称，唯一
+ * @param recoveryMode Boolean
+ * @constructor
+ */
 wx.MinQuery = function (pageName, recoveryMode) {
 	if (typeof pageName !== "string") {
 		console.error(`MinQuery instance loader a string page name, not this:`, pageName);
@@ -3993,7 +4031,7 @@ wx.MinQuery = function (pageName, recoveryMode) {
 	$pageMQRegisterTags[pageName] = {
 		registered: true
 	};
-	
+	//预先创建，然后返回执行数据
 	const _MQ = rootMinQuery(pageName, recoveryMode);
 	// 若未手动自行主函数，则自动执行一次
 	setTimeout(() => {
@@ -4015,7 +4053,9 @@ wx.MinQuery.debug = function (on, errorCarry) {
 	_$.isFunction(errorCarry) && (errorHandler = errorCarry);
 };
 $extend(wx.MinQuery, {
-	// 单个、批量设置服务器地址，或单个，全部服务器地址设置信息获取
+	/**
+	 * 单个、批量设置服务器地址，或单个，全部服务器地址设置信息获取
+	 */
 	$servers: configServers,
 	// 自动补全服务器地址信息
 	/**
@@ -4024,7 +4064,8 @@ $extend(wx.MinQuery, {
 	 *
 	 * return Complete Url 返回补全后的地址
 	 */
-	autoMendServer: autoMendServer
+	autoMendServer: autoMendServer,
+	
 }, _wxMethodsPackages)
 //微信模块调用自定义方法
 wx.MinQuery.wxMethod = wxMethodsCallbackGenerate;
