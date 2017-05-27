@@ -1070,7 +1070,7 @@ const $analysisDataEngine = function (sourceData, keyString, keyValue) {
 };
 
 
-const wxCalls = "fail,success,complete,cancel,delay,exec".split(",");
+const wxCalls = "fail,success,complete,cancel".split(",");
 const wxMethodsCallbackGenerate = function (methodName, _options, wrapperCall, context) {
 	// 检测并设置wx对象上下文
 	!context && (context = wx);
@@ -1120,22 +1120,33 @@ const wxMethodsCallbackGenerate = function (methodName, _options, wrapperCall, c
 				'cancel' in _backup && $errorCarry(null, _backup['cancel'], e);
 			}
 		});
-		_$.isFunction(wrapperCall)
-			? $errorCarry(null, wrapperCall, context[methodName], options)
-			: _$.isArray(options) ? context[methodName].apply(null, options) : context[methodName].call(null, options);
+		
 		// 支持then.js
 		const _suport_then = function (cont) {
 			_continue_func = cont;
 		}
 		// 属性方法用于方法的链式调用
-		wxCalls.forEach((m, i) => {
-			_suport_then[m] = (function (_m) {
-				return function (cb) {
-					_$.isFunction(cb) && (_backup[_m] = cb);
-					return this;
-				}
-			})(m)
-		});
+		_suport_then.success = function (cb) {
+			_backup['success'] = cb;
+			return this;
+		};
+		_suport_then.fail = function (cb) {
+			_backup['fail'] = cb;
+			return this;
+		};
+		_suport_then.complete = function (cb) {
+			_backup['complete'] = cb;
+			return this;
+		};
+		_suport_then.cancel = function (cb) {
+			_backup['cancel'] = cb;
+			return this;
+		};
+		//执行方法
+		_$.isFunction(wrapperCall)
+			? $errorCarry(null, wrapperCall, context[methodName], options)
+			: _$.isArray(options) ? context[methodName].apply(null, options) : context[methodName].call(null, options);
+		
 		return _suport_then;
 	} else {
 		//微信版本提示
@@ -1146,6 +1157,48 @@ const wxMethodsCallbackGenerate = function (methodName, _options, wrapperCall, c
 		console.error(`Do not have method [${methodName}] on context:`, context);
 	}
 };
+//将所有微信接口变为then链式调用形式
+let _wxMethodsThenTransformer = function (methodName, _options, wrapperCall, context) {
+	// 检测并设置wx对象上下文
+	!context && (context = wx);
+	// 检测调用方法名称及是否存在
+	let options = !_options ? {} : _options;
+	if (typeof methodName == 'string' && methodName in context) {
+		return Thenjs(function (cont) {
+			let mannuComp = options.complete;
+			// 仅在参数集为Object的情况下进行回调封装继承
+			_$.isPlainObject(options) && $extend(options, {
+				complete(e) {
+					if (_$.isFunction(mannuComp)) mannuComp(e);
+					// 支持Then.js的链式反应链
+					if (methodName == 'request' && e.statusCode === 200) {
+						cont(null,e);
+					} else {
+						let _msg = e.errMsg.split(":");
+						if (_msg[1] === "ok") {
+							cont(null,e);
+						} else {
+							cont(e);
+						}
+					}
+				}
+			});
+			//执行方法
+			_$.isFunction(wrapperCall)
+				? $errorCarry(null, wrapperCall, context[methodName], options)
+				: _$.isArray(options) ? context[methodName].apply(null, options) : context[methodName].call(null, options);
+		})
+	} else {
+		//微信版本提示
+		wx.showModal({
+			title: '提示',
+			content: `当前微信版本过低，无法使用[${methodName}]功能，请升级到最新微信版本后重试。`
+		})
+		console.error(`Do not have method [${methodName}] on context:`, context);
+	}
+}
+
+
 let _wxMethodsPackages = {};
 _$.each(wxMethodsParamsConfig, function (i, _oj) {
 	if (_oj.name && _oj.name in wx) {
@@ -1195,7 +1248,8 @@ _$.each(wxMethodsParamsConfig, function (i, _oj) {
 				} else {
 					options = args;
 				}
-				return wxMethodsCallbackGenerate(_inob.name, options, _inob['agent_call']);
+				// return wxMethodsCallbackGenerate(_inob.name, options, _inob['agent_call']);
+				return _wxMethodsThenTransformer(_inob.name, options, _inob['agent_call']);
 			}
 		})(_oj);
 	}
@@ -2055,7 +2109,14 @@ let callModule = function (moduleName, moduleParams) {
 }
 
 
-// 方法主体
+/**
+ * rootMinQuery方法返回主体。
+ * 由于各个页面数据的独立性，前期并未采用函数构造器的方式解决页面之间的数据独立问题。
+ * 后续更新将会解决这一问题，使代码更加规范
+ * @param pageName String 页面的名称
+ * @param recoveryMode
+ * @return {*}
+ */
 const rootMinQuery = function (pageName, recoveryMode) {
 	// 检测pageName是否为字符串
 	if (!typeof pageName === "string") {
@@ -2196,10 +2257,14 @@ const rootMinQuery = function (pageName, recoveryMode) {
 	
 	/** 此接口用于访问未支持的wx接口，提供二次封装，并支持链式调用方式。
 	 * 调用方法-分类回调形式：
-	 *      常规链式方法 MinQuery.wxMethod(wxMethodName,{config: value,success(re){}}).fail(err=>{});
-	 *      Thenjs方法 Thenjs(MinQuery.wxMethod(wxMethodName,{config:
-     * value})).then((cont,res)=>{cont()}).fin((cont,err,res)=>{cont(err)}); 单回调形式
-	 * MinQuery.wxMethod(wxMethodName,function(re){}); 单一参数型 MinQuery.wxMethod(wxMethodName,paramValue);
+	 *      常规配置方法： MinQuery.wxMethod('wxMethodName',{config: value,success(re){},fail(err){}});
+	 *      Thenjs方法：
+	 *          MinQuery.wxMethod('wxMethodName',{config:value})
+	 *              .then((cont,res)=>{cont()})
+	 *              .fail((cont,err)=>{cont()})
+	 *              .fin((cont,err,res)=>{cont(err)});
+	 *      单回调形式： MinQuery.wxMethod(wxMethodName,function(re){});
+	 *      单一参数型： MinQuery.wxMethod(wxMethodName,paramValue);
 	 */
 	MinQuery.wxMethod = wxMethodsCallbackGenerate;
 	
@@ -2742,14 +2807,24 @@ const rootMinQuery = function (pageName, recoveryMode) {
 			if (!elekeys) {
 				return noFunc;
 			}
-			// 查询元素
+			// 在事件管理器上查询对应元素
 			let eventEle = MinQuery.getData(MinQuery.eventManager, elekeys),
-				// 查询事件
+				// 再查询对应的事件
 				eventObj = eventEle ? MinQuery.getData(eventEle, eventkeys) : false;
 			// 查询注册扩展事件
 			let regObj = eventEle ? MinQuery.getData(eventEle, `registerEvent.${eventkeys.split(".").pop()}`) : false,
 				// 将事件绑定的data数据绑定到eventdata事件数据的$data字段上
-				dataArr = [], ei = 0, eleContext = !!eventEle ? MinQuery.getData(eventEle.context) : null;
+				dataArr = [], ei = 0, eleContext = (function () {
+					//查询事件上下文
+					if (!!eventEle){
+						//拆分Page和App的上下文查询
+						if(eventEle.context == '$page.page'){
+							return MinQuery('page')[0];
+						} else if(eventEle.context == '$app.app') {
+							return MinQuery('app')[0];
+						} else return MinQuery.getData(eventEle.context);
+					} else return null;
+				})();
 			if (!!eventObj && !!eventObj.active) {
 				// 将绑定数据挂在到event数据上的$data属性上
 				if (!!eventdata) {
@@ -2771,6 +2846,8 @@ const rootMinQuery = function (pageName, recoveryMode) {
 						reg.apply(eleContext, dataArr);
 					});
 				});
+				
+				console.info(eventEle.context,eleContext)
 				
 				let _method_return;
 				_method_return = MinQuery.isFunction(eventObj.method) ? $errorCarry(null, function () {
@@ -2952,7 +3029,8 @@ const rootMinQuery = function (pageName, recoveryMode) {
 				// 当前页面对象查询
 				if (_lowsele === "page") {
 					tar_selectorTypes.push(MinQuery.selectorsBank[_lowsele][0]);
-					multis[0] = MinQuery.$pageInitObject;
+					//如果当前page已经初始化完成，则使用pageInstance作为查询目标对象
+					multis[0] = MinQuery.pageInstance ? MinQuery.pageInstance : MinQuery.$pageInitObject;
 					multis.length = 1;
 				}
 				// 对APP对象查询

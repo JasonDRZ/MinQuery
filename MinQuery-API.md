@@ -68,12 +68,7 @@ MinQuery.debug(true,function ErrorHandler(){
 });
 
 ```
-MinQuery.debug(activeDebugMode, [errorHandler])方法接收两个参数
 
-参数 | 默认 | 说明
----|---
-`activeDebugMode[Boolean]` | `false` | 是否开启debug模式
-`errorHandler[Function]` | `console.error(e)` | 处理开发过程中的错误呈现
 
 **开发完成后请关掉debug模式，以免降低程序的运行效率。**
 
@@ -151,6 +146,7 @@ $(()=>{
 `uploadServer` | 设置upLoadFile服务器地址
 `downloadServer` | 设置downloadFile服务器地址
 `imageServer` | 设置图片服务器地址
+`imageLocal` | 设置图片服务器地址
 `audioServer` | 设置音频服务器地址
 `videoServer` | 设置视频服务器地址
 
