@@ -3,7 +3,6 @@
  */
 const $tools = require('../utils/index');
 const wx_config = require('../config/wx_config');
-const wxCalls = wx_config.methodsCalls;
 
 //微信接口封装访问器
 /** 此接口用于访问未支持的wx接口，提供二次封装，并支持链式调用方式。
@@ -24,12 +23,12 @@ let _wxMethodsThenTransformer = function (methodName, _options, wrapperCall, con
 	// 检测调用方法名称及是否存在
 	let options = !_options ? {} : _options;
 	if (typeof methodName == 'string' && methodName in context) {
-		return Thenjs(function (cont) {
+		return $tools.when(function (cont) {
 			let mannuComp = options.complete;
 			// 仅在参数集为Object的情况下进行回调封装继承
-			_$.isPlainObject(options) && $extend(options, {
+			$tools.isPlainObject(options) && $tools.extend(options, {
 				complete(e) {
-					if (_$.isFunction(mannuComp)) mannuComp(e);
+					if ($tools.isFunction(mannuComp)) mannuComp(e);
 					// 支持Then.js的链式反应链
 					if (methodName == 'request' && e.statusCode === 200) {
 						cont(null,e);
@@ -44,9 +43,9 @@ let _wxMethodsThenTransformer = function (methodName, _options, wrapperCall, con
 				}
 			});
 			//执行方法
-			_$.isFunction(wrapperCall)
-				? $errorCarry(null, wrapperCall, context[methodName], options)
-				: _$.isArray(options) ? context[methodName].apply(null, options) : context[methodName].call(null, options);
+			$tools.isFunction(wrapperCall)
+				? $tools.carry(null, wrapperCall, context[methodName], options)
+				: $tools.isArray(options) ? context[methodName].apply(null, options) : context[methodName].call(null, options);
 		})
 	} else {
 		//微信版本提示
@@ -57,6 +56,7 @@ let _wxMethodsThenTransformer = function (methodName, _options, wrapperCall, con
 		console.error(`Do not have method [${methodName}] on context:`, context);
 	}
 }
+//封装已配置的wx接口
 let wxMethodsPackages = {};
 $tools.each(wx_config.methodsParams, function (i, _oj) {
 	if (_oj.name && _oj.name in wx) {
@@ -106,7 +106,7 @@ $tools.each(wx_config.methodsParams, function (i, _oj) {
 				} else {
 					options = args;
 				}
-				return _wxMethodsThenTranformer(_inob.name, options, _inob['agent_call']);
+				return _wxMethodsThenTransformer(_inob.name, options, _inob['agent_call']);
 			}
 		})(_oj);
 	}

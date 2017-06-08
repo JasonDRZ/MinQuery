@@ -2,7 +2,7 @@
 * Github:** https://github.com/teambition/then.js
 * License:** MIT
  * ***/
-module.exports = (function () {
+exports.when = (function () {
 	let maxTickDepth = 100
 	let toString = Object.prototype.toString
 	let hasOwnProperty = Object.prototype.hasOwnProperty

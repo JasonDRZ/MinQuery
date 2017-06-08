@@ -28,9 +28,12 @@ const launchScene = {
 const methodsCalls = "fail,success,complete,cancel,delay,exec".split(",");
 
 // 微信小程序原生接口支持，不支持组件接口
-const methodsParams = [{
+const methodsParams = [
+//	接口可用性检测
+{
 	name: 'canIUse'
-},{
+}, {
+	//请求发起方法
 	name: "request",
 	param_def: [['url']],
 	param_nor: [['data', 'object|string'], ['header', 'object', {
@@ -158,10 +161,16 @@ const methodsParams = [{
 }, {
 	name: 'onBackgroundAudioStop'
 }, {
+	//创建音频上下文对象
+	name: 'createAudioContext'
+}, {
 	// 选择视频
 	name: 'chooseVideo',
 	param_def: [],
 	param_nor: [['sourceType', 'array'], ['maxDuration', 'number'], ['camera']]
+}, {
+	//创建视频上下文对象
+	name: 'createVideoContext'
 }, {
 	// 文件
 	name: 'saveFile',
@@ -226,6 +235,8 @@ const methodsParams = [{
 	param_def: [['latitude', 'number'], ['longitude', 'number']],
 	param_nor: [['scale', 'number'], ['name'], ['address']]
 }, {
+	name: 'createMapContext'
+	}, {
 	// 设备信息
 	name: 'getSystemInfo',
 	param_def: [],
@@ -341,6 +352,11 @@ const methodsParams = [{
 	param_nor: []
 }, {
 	name: 'onBLECharacteristicValueChange'
+}, {
+	//iBeacon
+	name: 'startBeaconDiscovery',
+	param_def: [['uuids','string|object']],
+	param_nor: []
 }, {
 	// 交互反馈
 	name: 'showToast',
@@ -472,8 +488,139 @@ const methodsParams = [{
 	name: 'base64ToArrayBuffer'
 }, {
 	name: 'arrayBufferToBase64'
-}];
+},
+//1.1.0 new API
+{
+	name: 'getExtConfig',
+	param_def: [],
+	param_nor: []
+},
+{
+	name: 'getExtConfigSync'
+},
+	{
+		name: 'showShareMenu',
+		param_def: [],
+		param_nor: []
+	},
+	{
+		name: 'getExtConfig',
+		param_def: [['withShareTicket','boolean']],
+		param_nor: []
+	},
+	{
+		name: 'hideShareMenu',
+		param_def: [],
+		param_nor: []
+	},
+	{
+		name: 'updateShareMenu',
+		param_def: [['withShareTicket','boolean']],
+		param_nor: []
+	},
+	{
+		name: 'getShareInfo',
+		param_def: [['shareTicket']],
+		param_nor: []
+	},
+//1.2.0 new API
+{
+	//iBeacon
+	name: 'stopBeaconDiscovery',
+	param_def: [],
+	param_nor: []
+}, {
+	//iBeacon
+	name: 'getBeacons',
+	param_def: [],
+	param_nor: []
+}, {
+	//iBeacon
+	name: 'onBeaconUpdate'
+}, {
+	//iBeacon
+	name: 'onBeaconServiceChange'
+},
+{
+	//获取小程序的授权设置
+	name: 'getSetting',
+	param_def: [],
+	param_nor: []
+},{
+	//提前授权
+	name: 'authorize',
+	param_def: [['scope']],
+	param_nor: []
+},{
+	//获取屏幕亮度
+	name: 'getScreenBrightness',
+	param_def: [],
+	param_nor: []
+},{
+	//设置屏幕亮度
+	name: 'setScreenBrightness',
+	param_def: [['value','number']],
+	param_nor: []
+},{
+	//保存联系人到系统通讯录
+	name: 'addPhoneContact',
+	param_def: [['firstName']],
+	param_nor: [['photoFilePath'],['nickName'],['lastName'],['middleName'],
+		['remark'],['mobilePhoneNumber'],['weChatNumber'],['addressCountry'],
+		['addressState'],['addressCity'],['addressStreet'],['addressPostalCode'],
+		['organization'],['title'],['workFaxNumber'],['workPhoneNumber'],
+		['hostNumber'],['email'],['url'],['workAddressCountry'],
+		['workAddressState'],['workAddressCity'],['workAddressStreet'],['workAddressPostalCode'],
+		['homeFaxNumber'],['homePhoneNumber'],['homeAddressCountry'],['homeAddressState'],
+		['homeAddressCity'],['homeAddressStreet'],['homeAddressPostalCode'],
+	]
+},{
+	//动态更新转发菜单设置
+	name: 'updateShareMenu',
+	param_def: [['withShareTicket','boolean']],
+	param_nor: []
+},{
+	// 使手机发生较长时间的振动（400ms）
+	name: 'vibrateLong',
+	param_def: [],
+	param_nor: []
+},{
+	// 使手机发生较短时间的振动（15ms）
+	name: 'vibrateShort',
+	param_def: [],
+	param_nor: []
+},{
+	//获取微信运动数据
+	name: 'getWeRunData',
+	param_def: [],
+	param_nor: []
+},{
+	//保存图片到系统相册
+	name: 'saveImageToPhotosAlbum',
+	param_def: [['filePath']]
+},{
+	//保存视频到系统相册
+	name: 'saveVideoToPhotosAlbum',
+	param_def: [['filePath']]
+},
 
+//	组件模块
+{
+	name: 'getBackgroundAudioManager'
+}
+
+];
+
+// //组件及控制器
+// let componentsParams = [
+//
+// 	// 1.2.0基带以后的组件
+// 	{
+// 		// 获取背景音频管理器
+// 		name: 'getBackgroundAudioManager',
+// 		event: []
+// 	}
+// ]
 
 
 module.exports = {

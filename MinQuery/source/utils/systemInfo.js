@@ -16,7 +16,7 @@ let getSystemInfo = function (cb) {
 		delete sys.windowHeight;
 		delete sys.windowWidth;
 		$tools.extend(res, sys);
-		$tools.isFunction() && cb(res);
+		$tools.isFunction(cb) && cb(res);
 	} catch (e) {
 		// try async model
 		wx.getSystemInfo({

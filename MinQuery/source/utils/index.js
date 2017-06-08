@@ -11,5 +11,7 @@ $tools.extend(require('path'));
 
 $tools.extend(require('dataEngine'));
 
+$tools.extend(require('../third_part/thenjs'));
+
 
 module.exports = $tools;

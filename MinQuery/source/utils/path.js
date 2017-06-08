@@ -4,7 +4,7 @@
 let $tools = require('tools');
 let $global = require('../global/index');
 
-// 检查是否存在http或https协议头
+// 检查是否存在http或https或wss协议头
 const hasHttp_sPrefix = function (target) {
 	if ($tools.isString(target)) {
 		// 全路径文件匹配/^((http):\/\/[\w\/\.]*)?\w+\.{1}[a-z]+$/

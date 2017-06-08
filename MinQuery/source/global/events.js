@@ -46,20 +46,27 @@ const $events = {
 			}
 		}
 	},
-	// filter arr: 关闭对应页面的当前事件['page1','page1']，关闭除了过滤页面以外所有页面的当前事件["!page1","!page2"]
-	destroy(ename, filter) {
-		let _off = {}, _keep = {}, _perm = false;
-		this.classifyFilter(filter, _keep, _off);
-		for (let pg in this.__events__) {
-			if (pg in _keep) continue;
-			if (!$tools.isEmptyObject(_off)) {
-				if (pg in _off) _perm = true;
-				else _perm = false;
-			} else {
-				_perm = true
+	// filter arr: 关闭对应页面的当前事件['page1','page2']，关闭除了过滤页面以外所有页面的当前事件["!page1","!page2"]
+	destroy(pname, ename, filter) {
+		let _off = {}, _keep = {},pg;
+		if ($tools.isArray(filter)){
+			//删除筛选项内的对应事件
+			this.classifyFilter(filter, _keep, _off);
+			for (pg in this.__events__) {
+				if (pg in _keep) continue;
+				if (pg in _off && ename in this.__events__[pg]) {
+					delete this.__events__[pg][ename];
+				}
 			}
-			if (_perm && pg in this.__events__ && ename in this.__events__[pg]) {
+		} else if ($tools.isString(filter) && filter == 'all'){
+			//删除所有页面的事件
+			for (pg in this.__events__) {
 				delete this.__events__[pg][ename];
+			}
+		} else {
+			//默认值删除当前页面的事件
+			for (pg in this.__events__) {
+				if (pg == pname) delete this.__events__[pg][ename];
 			}
 		}
 	}

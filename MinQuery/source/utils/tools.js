@@ -17,7 +17,7 @@ let
 	toString = class2type.toString,
 	hasOwn = class2type.hasOwnProperty,
 	
-	rtrim = /\s/g;
+	rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g;
 // 生成类型字典
 let _classTypeInitial = [false, 0, '', function () {
 }, [], Date.now(), new RegExp(), {}, new Error(), 0];
@@ -128,7 +128,7 @@ let $tools = {
 			class2type[toString.call(obj)] || "object" :
 			typeof obj;
 	},
-	// 数据镜像：将已有数据镜像还原到某一原状态；
+	// 数据镜像：将已有数据镜像还原到某一原状态；//框架内部使用
 	recoveryObject: function (source, mirror, deep) {
 		let isArray, s;
 		// 支持对象数据恢复，deep操作时支持数组
@@ -341,8 +341,22 @@ let $tools = {
 			if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
 		return fmt;
 	},
+	/**
+	 * 生成随机16进制颜色字符串方法
+	 * @return {string}
+	 */
+	randomColor() {
+		let rgb = [], i = 0;
+		for (; i < 3; ++i) {
+			let color = Math.floor(Math.random() * 256).toString(16)
+			color = color.length == 1 ? '0' + color : color
+			rgb.push(color)
+		}
+		return '#' + rgb.join('')
+	},
 	// 当前时间戳
 	now: Date.now,
+	//对象继承
 	extend: function () {
 		let options, name, src, copy, copyIsArray, clone,
 			target = arguments[0] || {},
